@@ -36,8 +36,6 @@ typedef struct wirebus
 }wirebus;
 
 
-
-
 //Define wire pin
 #define			WIRE_PORT		PORTB
 #define WIRE_PIN                1
