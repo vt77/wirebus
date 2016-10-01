@@ -3,7 +3,7 @@ Simple CAN-like wire protocol for microcontrollers. Protocol was designed for av
 
 __Features:__
 
-* No master requered. All devices may talk each other
+* No master required. All devices may talk each other
 * Only one wire needed in simple mode or LVDS for long lines
 * Small footprint as about 300k
 * Collision resolving 
