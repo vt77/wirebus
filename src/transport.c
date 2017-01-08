@@ -22,6 +22,13 @@ static volatile uint8_t counter;
 static volatile wirebus wire;
 static volatile uint8_t pos;
 
+
+void transport_init()
+{
+	SETUP_WIREPIN;
+	START_RECEIVER;
+}
+
 void delayTicks(uint8_t cnt)
 {
 	counter=0;
@@ -81,12 +88,12 @@ enum wirebusErrorCode sendByte(uint8_t byte)
 		wire.data <<= 1;
 		DELAY(1);
 		
-		//if( READ_WIRE_STATE  != 1  )
-		//{
+		if( wire.pinState == PIN_STATE_MARK  )
+		{
 			//Some one else holds line down.
 			//Stop transmitting and return error
-		//	return ERROR_TRANSMIT_ABORT;	
-		//}
+			return ERROR_TRANSMIT_ABORT;	
+		}
 	}
 	return ERROR_OK;
 }
@@ -131,7 +138,7 @@ void nextByte()
     if( counter > 1 )
 		wire.data |= 1;
 	
-	if( ++wire.bits_count == 8 )
+	if( ++wire.bits_count == 9 )
 	{
 		
 		if( onByteReceived( pos++, wire.data ) != 0 )
@@ -175,6 +182,7 @@ Two functions must be implemented
 
 #ifdef __ARCH_AVR__
 
+
 ISR(PINCHANGE_VECTOR)
 {
 	wire.pinState = READ_WIRE_STATE  ? PIN_STATE_SPACE : PIN_STATE_MARK;
@@ -187,6 +195,8 @@ ISR(PINCHANGE_VECTOR)
 
 ISR(TIMER_CTC_VECTOR)
 {
+		PORTB ^= 0x1;
+
         counter++;
 }
 
@@ -213,7 +223,7 @@ void interrupt inter(void)
    }
    if (INTCON&0b00000001)
    {
-  	if( wire.state == WIREBUS_TRANSPORT_STATE_WAITFORSTART || wire.state == WIREBUS_TRANSPORT_STATE_READ )
+  	if( !wire.state != WIREBUS_TRANSPORT_STATE_IDLE && wire.state != WIREBUS_TRANSPORT_STATE_READ )
 	{
 		wire.pinState = READ_WIRE_STATE  ? PIN_STATE_SPACE : PIN_STATE_MARK;
 		fsm[wire.state][wire.pinState]();

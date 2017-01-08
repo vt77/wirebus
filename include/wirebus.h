@@ -11,6 +11,13 @@
 #define		WIREBUS_PRIORITY_INFO		0b00
 
 
+#ifndef WIREBUS_UUID_MAJOR
+#error "Please define WIREBUS_UUID_MAJOR and WIREBUS_UUID_MINOR codes of your device"
+#endif
+#ifndef WIREBUS_UUID_MINOR
+#error "Please define WIREBUS_UUID_MAJOR and WIREBUS_UUID_MINOR codes of your device"
+#endif
+
 /*************************
 	Commands
 	Param : None
@@ -18,12 +25,13 @@
 **************************/
 
 #define		WIREBUS_CMD_BASE				0x00
-#define		WIREBUS_CMD_NONE				WIREBUS_CMD_BASE + 0			//Dummy command
+#define		WIREBUS_CMD_NONE				WIREBUS_CMD_BASE + 0			//Empty command for internal use
 #define		WIREBUS_CMD_REBOOT				WIREBUS_CMD_BASE + 1			//Sent by device on init
 #define		WIREBUS_CMD_GETSTATE			WIREBUS_CMD_BASE + 2			//Sent to device to get its state
-#define		WIREBUS_CMD_PING				WIREBUS_CMD_BASE + 3			//Sent to device on init
-#define		WIREBUS_ACK_INIT				WIREBUS_CMD_BASE + 4			//Sent by device on init
-#define		WIREBUS_CMD_TOGGLE				WIREBUS_CMD_BASE + 5			//Sent to device toggle switch
+#define		WIREBUS_CMD_GETDEVICEINFO		WIREBUS_CMD_BASE + 3			//Sent to device to get its state
+#define		WIREBUS_CMD_PING				WIREBUS_CMD_BASE + 4			//Sent to device
+#define		WIREBUS_ACK_INIT				WIREBUS_CMD_BASE + 5			//Sent by device on init
+#define		WIREBUS_CMD_TOGGLE				WIREBUS_CMD_BASE + 6			//Sent to device toggle switch
 
 /*
 	Info packets
@@ -44,6 +52,7 @@
 */
 
 #define		WIREBUS_MESSAGE_BASE			0x30
+#define		WIREBUS_MESSAGE_DEVICEINFO		WIREBUS_MESSAGE_BASE + 1
 
 
 #define 	WIREBUS_ADDRESS_BROADCAST	0xFF
@@ -66,6 +75,9 @@
 
 
 #define 	ASSERT(a)  if(a != ERROR_OK) goto error
+
+
+#define 	WIREBUS_MAX_DATA	8
 
 
 typedef void (*wirebus_callback)();
@@ -112,8 +124,12 @@ typedef struct sWirebusDevice
 }wirebus_device;
 
 
-uint8_t sendCommand( uint8_t priority, uint8_t cmd , uint8_t dst, uint8_t data );
-uint8_t sendMessage(  uint8_t priority,  uint8_t cmd ,  uint8_t dst,  uint8_t size, const uint8_t *data );
+void wirebus_init();
+wirebus_packet *wirebus_check_new_data();
+
+uint8_t wirebusSendCommand( uint8_t priority, uint8_t cmd , uint8_t dst, uint8_t data );
+uint8_t wirebusSendMessage(  uint8_t priority,  uint8_t cmd ,  uint8_t dst,  uint8_t size, const uint8_t *data );
 #define CRC(a,b)  a^=b
+
 
 #endif

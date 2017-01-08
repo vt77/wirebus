@@ -25,11 +25,11 @@ enum  wirebusErrorCode {
 	ERROR_TRANSMIT_ABORT			=   1
 };
 
-
 enum pinStateCode{
 	PIN_STATE_SPACE				=	0,
 	PIN_STATE_MARK		    		=	1
 } ;
+
 
 typedef uint8_t (*rcv_callback)(uint8_t);
 
@@ -87,5 +87,7 @@ typedef struct wirebus
 enum wirebusErrorCode sendByte(uint8_t byte);
 enum wirebusErrorCode sendStart();
 void releaseLine();
+void transport_init();
+
 
 #endif

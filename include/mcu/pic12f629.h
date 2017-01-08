@@ -8,15 +8,18 @@
 #define         PERIOD          
 
 
-//#define PRESCALER_64    (1 << CS00)|(1 << CS01)|(0 << CS02)
-//#define PRESCALER_256   (0 << CS00)|(0 << CS01)|(1 << CS02)
-//#define PRESCALER_1024  (1 << CS00)|(0 << CS01)|(1 << CS02)
+#define			SETUP_WIREPIN   
+#define			SETUP_TIMER     OCR0A = WIREBUS_BIT_DELAY;TCCR0A =(1<<WGM01);TCCR0B = 0; TIMSK0 |= (1<<OCIE0A);
 
-//#define PRESCALER PRESCALER_256
+#define			START_RECEIVER
+
+#define PRESCALER PRESCALER_256
 
 
 #define START_TIMER     
 #define STOP_TIMER      
+
+#define WIREBUS_BIT_DELAY    ( (9600000 / 256) / 1250 )
 
 
 //#define TIMER_CTC_VECTOR        TIMER0_COMPA_vect

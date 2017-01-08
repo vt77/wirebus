@@ -12,6 +12,7 @@
 #define                 START_RECEIVER  MCUCR = (1<<ISC00); GIMSK=(1<< INT0);
 #define                 STOP_RECEIVER   GIMSK=0;
 
+
 //Timer definitions
 #define         NOW             TCNT0
 #define         RESET_TIMER     TCNT0=0
@@ -24,13 +25,19 @@
 
 #define PRESCALER PRESCALER_256
 
+//One tick period 800 uSec . BitRate 1250 
+//BIT_DELAY = (CPU_CLOCK / UART_PRESCALER ) / BAUD_RATE
+#define WIREBUS_BIT_DELAY    ( (8000000 / 256) / 1250 )
 
-#define START_TIMER     TCCR0A =(1<<WGM01);TCCR0B = PRESCALER; TIMSK |= (1<<OCIE0A);
+
+#define START_TIMER     TCCR0A =(1<<WGM01);TCCR0B = PRESCALER; TIMSK |= (1<<OCIE0A);OCR0A = WIREBUS_BIT_DELAY;
 #define STOP_TIMER   	TCCR0B=0;
 
+#define SETUP_WIREPIN   PORTB &= ~_BV(WIRE_TX_PIN);DDRB &= ~_BV(WIRE_TX_PIN);  
 
-#define SET_MARK     PORTB |= _BV(WIRE_TX_PIN) //Hold line down
-#define SET_SPACE	 PORTB ^= _BV(WIRE_TX_PIN) //Release line
+
+#define SET_MARK     DDRB |= _BV(WIRE_TX_PIN) //Make port output. Hold line down
+#define SET_SPACE	 DDRB  &= ~_BV(WIRE_TX_PIN) //Make port input . Release line
 
 
 #define  PINCH_INTERRUPTNAME(a) INT #a _vect
@@ -39,7 +46,7 @@
 #define TIMER_CTC_VECTOR	TIM0_COMPA_vect
 #define PINCHANGE_VECTOR	INT0_vect
 
-#define  READ_WIRE_STATE  PINB0==1
+#define  READ_WIRE_STATE  ( PINB & (1 << PINB2))
 
 
 #endif

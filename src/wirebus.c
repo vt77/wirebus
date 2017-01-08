@@ -18,9 +18,14 @@ limitations under the License.
 extern wirebus_packet  		packet;
 extern wirebus_device 		device;    
 
-register uint8_t crc asm("r5");
-register uint8_t data_readed asm("r6");
+volatile uint8_t crc 		 = 0;
+volatile uint8_t data_readed = 0;
 
+
+void wirebus_init()
+{
+	transport_init();
+}
 
 
 /*
@@ -30,7 +35,7 @@ i.e WIREBUS_CMD orWIREBUS_INFO
 
 */
 
-uint8_t sendCommand( uint8_t priority, uint8_t cmd , uint8_t dst, uint8_t data )
+uint8_t wirebusSendCommand( uint8_t priority, uint8_t cmd , uint8_t dst, uint8_t data )
 {
 
 	uint8_t header;
@@ -72,7 +77,7 @@ i.e WIREBUS_MESSAGE
 
 */
 
-uint8_t sendMessage(  uint8_t priority,  uint8_t cmd ,  uint8_t dst,  uint8_t size, const uint8_t *data )
+uint8_t wirebusSendMessage(  uint8_t priority,  uint8_t cmd ,  uint8_t dst,  uint8_t size, const uint8_t *data )
 {
 	uint8_t tmp;
 
@@ -147,7 +152,7 @@ uint8_t  set_pkt_size(  uint8_t b )
 
 uint8_t  set_pkt_data( uint8_t b )
 {
-	//WARNING ! Size of array not checked
+	//TODO WARNING ! Size of array not checked
 	//Buffer overflow possible 
 	packet.data[data_readed++] = b;
 	if( data_readed == packet.size) 
