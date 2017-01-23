@@ -61,6 +61,14 @@ typedef struct wirebus
 #include "mcu/pic12f629.h"
 #endif
 
+#ifdef __MCU_stm8s__
+#include "mcu/stm8.h"
+#endif
+
+#ifdef __MCU_stm8l__
+#include "mcu/stm8.h"
+#endif
+
 
 #ifndef WIREBUS_MCU
 #error "Unknown microcontroller. Check ./devices directory for list of known devices"
