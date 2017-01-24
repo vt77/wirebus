@@ -74,11 +74,6 @@ typedef struct wirebus
 #error "Unknown microcontroller. Check ./devices directory for list of known devices"
 #endif
 
-
-//#define 		SET_SPACE		WIRE_PORT |= _BV(WIRE_PIN)
-//#define 		SET_MARK		WIRE_PORT &= ~_BV(WIRE_PIN)
-//#define 		READ_WIRE_STATE         (PINB & _BV(WIRE_PIN))
-
 #define			DELAY(a)		delayTicks(a)		
 
 #ifdef __GNUC__
@@ -87,8 +82,8 @@ typedef struct wirebus
 #endif
 
 #ifdef __XC8__
-#define NOINLINE 
-#define INLINE   
+#define NOINLINE noinline
+#define INLINE   inline
 #endif
 
 

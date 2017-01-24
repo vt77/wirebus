@@ -42,7 +42,9 @@ void delayTicks(uint8_t cnt)
 enum wirebusErrorCode sendStart()
 {
 	uint8_t i;
-
+	
+	START_RECEIVER
+	
 	//Listen line for 5 periods
 	for(i=0;i<5;i++)
 	{
@@ -51,8 +53,7 @@ enum wirebusErrorCode sendStart()
 		DELAY(1);
 	}
 
-	//Send preambule 		
-
+	//Send preambule
 	SET_MARK;
 	DELAY(8);
 	SET_SPACE;
@@ -70,6 +71,7 @@ enum wirebusErrorCode sendStart()
 void releaseLine()
 {
 	wire.state =  WIREBUS_TRANSPORT_STATE_IDLE;	
+	START_RECEIVER;
 }
 
 
@@ -90,7 +92,7 @@ enum wirebusErrorCode sendByte(uint8_t byte)
 		
 		if( wire.pinState == PIN_STATE_MARK  )
 		{
-			//Some one else holds line down.
+			//Someone else holds line down.
 			//Stop transmitting and return error
 			return ERROR_TRANSMIT_ABORT;	
 		}
@@ -130,9 +132,7 @@ void countPeriods()
 	counter = 0;	
 }
 
-
 /* Bit received  */
-
 void nextByte()
 {
     if( counter > 1 )
@@ -157,7 +157,6 @@ void nextByte()
 	wire.data <<= 1;
 }
 
-
 fsm_dispatch fsm [2][2] = {
 	/*PIN_STATE_SPACE , PIN_STATE_MARK */
 
@@ -168,49 +167,20 @@ fsm_dispatch fsm [2][2] = {
 	{  nextByte , countPeriods     }
 };
 
-
-/*
-
-MCU depended staff starts from here 
-Two functions must be implemented 
-
-1. On WIRE_RX_PIN change interrupt  
-2. Timer 250 uSec tick  
-
-*/
-
-
-#ifdef __ARCH_AVR__
-
-
 ISR(PINCHANGE_VECTOR)
 {
 	wire.pinState = READ_WIRE_STATE  ? PIN_STATE_SPACE : PIN_STATE_MARK;
-	
 	if( wire.state != WIREBUS_TRANSPORT_STATE_IDLE && wire.state != WIREBUS_TRANSPORT_STATE_READ )
-			return;
-	
+			return;	
 	fsm[wire.state][wire.pinState]();
 }
 
 ISR(TIMER_CTC_VECTOR)
 {
-		PORTB ^= 0x1;
-
         counter++;
 }
 
-
-//static void
-//__attribute__ ((naked))
-//__attribute__ ((section (".init8")))    /* run this right before main */
-//__attribute__ ((unused))    /* Kill the unused function warning */
-//transport_init(void) {
-//	
-//}
-
-
-#elif __ARCH_PIC__
+#if __ARCH_PIC__
 
 void interrupt inter(void)
 {
@@ -218,17 +188,13 @@ void interrupt inter(void)
  
    if ((T0IF)&&(T0IE))
    {
-		counter++;
+		isr_timer_ovf();
 		T0IF = 0;
    }
    if (INTCON&0b00000001)
    {
-  	if( !wire.state != WIREBUS_TRANSPORT_STATE_IDLE && wire.state != WIREBUS_TRANSPORT_STATE_READ )
-	{
-		wire.pinState = READ_WIRE_STATE  ? PIN_STATE_SPACE : PIN_STATE_MARK;
-		fsm[wire.state][wire.pinState]();
-	} 
-	//TCON&=0b11111110;	//Clearing the interrupt flag RBIF
+		isr_pin_change();
+	    //TCON&=0b11111110;		//Clearing the interrupt flag RBIF
    }
 	INTCON |= 0b10001000;	//Re enabling the interrupt
 }

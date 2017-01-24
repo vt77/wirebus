@@ -1,6 +1,6 @@
-#ifndef _WIREBUS_DEVICES_PIC12F629
-#define _WIREBUS_DEVICES_PIC12F629
-#define WIREBUS_MCU	pic12F629
+#ifndef _WIREBUS_DEVICES_PIC12F683
+#define _WIREBUS_DEVICES_PIC12F683
+#define WIREBUS_MCU	pic12F683
 
 //Define pins
 
@@ -8,7 +8,7 @@
 #define 		WIRE_TX_PIN       	1
 
 //
-//  Setup timer to fire interrupt per 0.5 ms  ( 250 uSec tick for fast line)
+//  Setup timer to fire interrupt per 0.5 ms
 //  Procedures to start and stop timer
 //
 
@@ -42,10 +42,5 @@
 #define SET_SPACE       GPIO ## WIRE_TX_PIN = 0
 
 #define READ_WIRE_STATE GPIO ## WIRE_RX_PIN
-
-//Arch depended defines
-#define ISR(a)   inline void isr_ ## a ()
-#define PINCHANGE_VECTOR pin_change
-#define TIMER_CTC_VECTOR timer_ovf
 
 #endif
