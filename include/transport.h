@@ -13,36 +13,19 @@
 #endif
 
 
+#ifndef WIREBUS_RX_PIN 
+#error Please define WIREBUS_RX_PIN
+#endif
+
+#ifndef WIREBUS_TX_PIN 
+#error Please define WIREBUS_TX_PIN
+#endif
 
 #define WIREBUS_TRANSPORT_STATE_IDLE 			0
 #define WIREBUS_TRANSPORT_STATE_READ 			1
 #define WIREBUS_TRANSPORT_STATE_TRANSMIT		2
 
 #define MIN_PREAMBULE_LENGHT	6
-
-enum  wirebusErrorCode {
-	ERROR_OK				=   0,
-	ERROR_TRANSMIT_ABORT			=   1
-};
-
-enum pinStateCode{
-	PIN_STATE_SPACE				=	0,
-	PIN_STATE_MARK		    		=	1
-} ;
-
-
-typedef uint8_t (*rcv_callback)(uint8_t);
-
-typedef struct wirebus 
-{
-	uint8_t data;
- 	uint8_t bits_count;	
-	uint8_t state;
-	enum pinStateCode pinState;
-	rcv_callback onReceive;
-
-}wirebus;
-
 
 #ifdef __MCU_attiny2313__
 #include "mcu/attiny2313.h"
@@ -61,6 +44,10 @@ typedef struct wirebus
 #include "mcu/pic12f629.h"
 #endif
 
+#ifdef __MCU_12f683__ 
+#include "mcu/pic12f683.h"
+#endif
+
 #ifdef __MCU_stm8s__
 #include "mcu/stm8.h"
 #endif
@@ -71,7 +58,7 @@ typedef struct wirebus
 
 
 #ifndef WIREBUS_MCU
-#error "Unknown microcontroller. Check ./devices directory for list of known devices"
+#error "Unknown microcontroller. Check devices.txt  for list of known devices and platforms"
 #endif
 
 #define			DELAY(a)		delayTicks(a)		
@@ -87,10 +74,9 @@ typedef struct wirebus
 #endif
 
 
-enum wirebusErrorCode sendByte(uint8_t byte);
-enum wirebusErrorCode sendStart();
+uint8_t sendByte(uint8_t byte);
+uint8_t sendStart();
 void releaseLine();
 void transport_init();
-
 
 #endif

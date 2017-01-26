@@ -15,6 +15,11 @@ limitations under the License.
 
 #include "wirebus.h"
 
+extern uint8_t sendByte(uint8_t byte);
+extern uint8_t sendStart();
+extern void releaseLine();
+extern void transport_init();
+
 extern wirebus_packet  		packet;
 extern wirebus_device 		device;    
 

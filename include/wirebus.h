@@ -1,8 +1,7 @@
 #ifndef __WIREBUS_DEF_H
 #define __WIREBUS_DEF_H
 
-
-#include "transport.h"
+#include <stdint.h>
 
 
 #define		WIREBUS_PRIORITY_ALERT		0b11
@@ -11,12 +10,6 @@
 #define		WIREBUS_PRIORITY_INFO		0b00
 
 
-#ifndef WIREBUS_UUID_MAJOR
-#error "Please define WIREBUS_UUID_MAJOR and WIREBUS_UUID_MINOR codes of your device"
-#endif
-#ifndef WIREBUS_UUID_MINOR
-#error "Please define WIREBUS_UUID_MAJOR and WIREBUS_UUID_MINOR codes of your device"
-#endif
 
 /*************************
 	Commands
@@ -104,6 +97,32 @@ typedef struct
 
 #define		PACKET_PRIORITY(a)	( a >> 6 )
 #define		PACKET_COMMAND(a)   ( a & 0x3F)
+
+/*
+enum  wirebusErrorCode {
+        ERROR_OK                                =   0,
+        ERROR_TRANSMIT_ABORT                    =   1
+};
+*/
+
+enum pinStateCode{
+        PIN_STATE_SPACE                         =       0,
+        PIN_STATE_MARK                          =       1
+} ;
+
+
+typedef uint8_t (*rcv_callback)(uint8_t);
+
+
+typedef struct wirebus
+{
+        uint8_t data;
+        uint8_t bits_count;
+        uint8_t state;
+        enum pinStateCode pinState;
+        rcv_callback onReceive;
+
+}wirebus;
 
 
 typedef struct sWirebusPacket{

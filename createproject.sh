@@ -59,7 +59,7 @@ create_makefile
 echo -e "Project created !";
 echo -e "\nNext steps:\n"
 echo -e "1. cd $WORKDIR"
-echo -e "2. Edit Makefile and define WIREBUS_UUID_MAJOR and WIREBUS_UUID_MINOR of your new device"
+echo -e "2. Edit config.h and define WIREBUS_UUID_MAJOR and WIREBUS_UUID_MINOR of your new device"
 echo -e "3. Edit file $PROJECTNAME.c to insert your custom code"
 echo -e "4. make"
 echo ""

@@ -13,7 +13,9 @@ limitations under the License.
 
 */
 
+#include "config.h"
 #include "transport.h"
+#include "wirebus.h"
 
 typedef void (*fsm_dispatch)();
 uint8_t onByteReceived(uint8_t pos, uint8_t b);
@@ -33,13 +35,13 @@ void delayTicks(uint8_t cnt)
 {
 	counter=0;
 	RESET_TIMER;
-	START_TIMER
+	START_TIMER;
 	while(counter<cnt);
 	STOP_TIMER;
 }
 
 
-enum wirebusErrorCode sendStart()
+uint8_t sendStart()
 {
 	uint8_t i;
 	
@@ -75,7 +77,7 @@ void releaseLine()
 }
 
 
-enum wirebusErrorCode sendByte(uint8_t byte)
+uint8_t sendByte(uint8_t byte)
 {
 	wire.bits_count = 8;
 	wire.data		= byte;
@@ -167,7 +169,17 @@ fsm_dispatch fsm [2][2] = {
 	{  nextByte , countPeriods     }
 };
 
-ISR(PINCHANGE_VECTOR)
+#ifndef PINCHANGE_VECTOR 
+#error PINCHANGE_VECTOR not defined 
+#endif
+
+
+#ifndef TIMER_VECTOR 
+#error TIMER_VECTOR not defined 
+#endif
+
+
+ISR( PINCHANGE_VECTOR )
 {
 	wire.pinState = READ_WIRE_STATE  ? PIN_STATE_SPACE : PIN_STATE_MARK;
 	if( wire.state != WIREBUS_TRANSPORT_STATE_IDLE && wire.state != WIREBUS_TRANSPORT_STATE_READ )
@@ -175,9 +187,17 @@ ISR(PINCHANGE_VECTOR)
 	fsm[wire.state][wire.pinState]();
 }
 
-ISR(TIMER_CTC_VECTOR)
+#ifdef  ON_TIMER_FUNC
+extern ON_TIMER_FUNC (uint8_t cntr);
+#endif
+
+ISR( TIMER_VECTOR )
 {
         counter++;
+#ifdef	ON_TIMER_FUNC
+	ON_TIMER_FUNC(counter);
+#endif
+
 }
 
 #if __ARCH_PIC__

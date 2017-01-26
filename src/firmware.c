@@ -14,7 +14,7 @@ limitations under the License.
 */
 
 #include "wirebus.h"
-#include "transport.h"
+#include "config.h"
 
 #ifdef __ARCH_AVR__
 #include <avr/wdt.h>
@@ -38,6 +38,14 @@ limitations under the License.
 #endif
 
 
+#ifndef WIREBUS_UUID_MAJOR
+#error "Please define WIREBUS_UUID_MAJOR and WIREBUS_UUID_MINOR codes of your device"
+#endif
+#ifndef WIREBUS_UUID_MINOR
+#error "Please define WIREBUS_UUID_MAJOR and WIREBUS_UUID_MINOR codes of your device"
+#endif
+
+
 wirebus_packet  packet;
 wirebus_device 	device;
 
@@ -45,6 +53,7 @@ uint8_t  volatile cmd;
 extern void setup();
 extern void loop();
 
+uint8_t    data_buffer[WIREBUS_MAX_DATA];
 
 wirebus_packet *wirebus_check_new_data()
 {
@@ -65,8 +74,7 @@ void on_new_data()
 int main()
 {
 
-	uint8_t   	data_buffer[WIREBUS_MAX_DATA];
-	uint8_t		pong_count  =   0;
+	uint8_t	   pong_count  =   0;
 	device.addr = load_device_addr();
 	device.func = on_new_data;
 	packet.data = data_buffer;
@@ -76,6 +84,9 @@ int main()
 	setup();
 
 	ENABLE_INTERRUPTS();
+
+	wirebusSendCommand(WIREBUS_PRIORITY_INFO,WIREBUS_CMD_REBOOT,packet.src,0);
+
 
 	while(1){
 	  
@@ -104,7 +115,5 @@ int main()
 	  }
 
 	  loop();
-
 	}
-	
 }
