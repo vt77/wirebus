@@ -41,7 +41,7 @@
 
 #define  READ_WIRE_STATE  ( PINB & (1 << PINB1))
 
-#define TIMER_CTC_VECTOR	TIM0_COMPA_vect
+#define TIMER_VECTOR		TIM0_COMPA_vect
 #define PINCHANGE_VECTOR	INT0_vect
 
 #endif
