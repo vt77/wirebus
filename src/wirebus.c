@@ -14,6 +14,7 @@ limitations under the License.
 */
 
 #include "wirebus.h"
+#include "config.h"
 
 extern uint8_t sendByte(uint8_t byte);
 extern uint8_t sendStart();

@@ -19,6 +19,7 @@ limitations under the License.
 #ifdef __ARCH_AVR__
 #include <avr/wdt.h>
 #include <avr/eeprom.h>
+#include <avr/interrupt.h>
 
 #define     save_device_addr(a)   eeprom_write_byte(0x0,a)
 #define     load_device_addr()    eeprom_read_byte(0x0)
