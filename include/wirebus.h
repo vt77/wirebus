@@ -19,9 +19,9 @@
 
 #define		WIREBUS_CMD_BASE				0x00
 #define		WIREBUS_CMD_NONE				WIREBUS_CMD_BASE + 0			//Empty command for internal use
-#define		WIREBUS_CMD_REBOOT				WIREBUS_CMD_BASE + 1			//Sent by device on init
-#define		WIREBUS_CMD_GETSTATE				WIREBUS_CMD_BASE + 2			//Sent to device to get its state
-#define		WIREBUS_CMD_GETDEVICEINFO			WIREBUS_CMD_BASE + 3			//Sent to device to get its state
+#define		WIREBUS_CMD_REBOOT				WIREBUS_CMD_BASE + 1			//Asks device to reboot
+#define		WIREBUS_CMD_GETSTATE				WIREBUS_CMD_BASE + 2			//Sent to device to get its state . WIREBUS_INFO_STATE replaied
+#define		WIREBUS_CMD_GETDEVICEINFO			WIREBUS_CMD_BASE + 3			//Sent to device to get manufacturer info . Device replays its UUID_MAJOR and UUID_MINOIR. WIREBUS_MESSAGE_DEVICEINFO
 #define		WIREBUS_CMD_PING				WIREBUS_CMD_BASE + 4			//Sent to device
 #define		WIREBUS_ACK_INIT				WIREBUS_CMD_BASE + 5			//Sent by device on init
 #define		WIREBUS_CMD_TOGGLE				WIREBUS_CMD_BASE + 6			//Sent to device toggle switch
@@ -33,10 +33,10 @@
 */
 
 #define		WIREBUS_INFO_BASE			0x010 
-#define		WIREBUS_INFO_PONG			WIREBUS_INFO_BASE + 1			//Sent by device onpong response. Param = counter
-#define		WIREBUS_INFO_STATE			WIREBUS_INFO_BASE + 2			//Sent by device on its status
-#define		WIREBUS_DATA_SWITCH			WIREBUS_INFO_BASE + 3			//Sent to switch device . Device respond with STATE 
-#define		WIREBUS_DATA_SETADDR		WIREBUS_INFO_BASE + 4			//Sent to device to update its network address
+#define		WIREBUS_INFO_PONG			WIREBUS_INFO_BASE + 1			//Sent by device pong response. Param = counter
+#define		WIREBUS_INFO_STATE			WIREBUS_INFO_BASE + 2			//Sent by device on state command (WIREBUS_CMD_GETSTATE)
+#define		WIREBUS_DATA_SWITCH			WIREBUS_INFO_BASE + 3			//Sent to switch device . Device respond with WIREBUS_INFO_STATE 
+#define		WIREBUS_DATA_SETADDR			WIREBUS_INFO_BASE + 4			//Sent to device to update its network address
 
 /*
 	Message
@@ -50,27 +50,26 @@
 
 #define 	WIREBUS_ADDRESS_BROADCAST	0xFF
 
-#define			WIREBUS_DEVICE_STATUS_READY	  	  		0
-#define         WIREBUS_DEVICE_STATUS_BUSY     	  		1
-#define         WIREBUS_DEVICE_STATUS_NEWDATA     		2
-#define 		WIREBUS_DEVICE_STATUS_SKIP		  		3	
+#define			WIREBUS_DEVICE_STATUS_READY	  	  	0
+#define         	WIREBUS_DEVICE_STATUS_BUSY     	  		1
+#define         	WIREBUS_DEVICE_STATUS_NEWDATA     		2
+#define 		WIREBUS_DEVICE_STATUS_SKIP		  	3	
 #define 		WIREBUS_DEVICE_STATUS_READ_START		4
 #define 		WIREBUS_DEVICE_STATUS_READ_SRC_ADDR		5
 #define 		WIREBUS_DEVICE_STATUS_READ_DST_ADDR		6
-#define 		WIREBUS_DEVICE_STATUS_READ_DATA_SIZE	7
+#define 		WIREBUS_DEVICE_STATUS_READ_DATA_SIZE		7
 #define 		WIREBUS_DEVICE_STATUS_READ_DATA			8
 #define 		WIREBUS_DEVICE_STATUS_READ_CRC			9
 
 
 #define 		ERROR_OK		  	  0
-#define			ERROR_CMD_UNKNOWN	  1
-#define         ERROR_TRANSMIT_ABORT           2
+#define			ERROR_CMD_UNKNOWN	  	  1
+#define         	ERROR_TRANSMIT_ABORT              2
 
 
 #define		TIMER_PERIOD_QUARTER	300
 #define		TIMER_PERIOD_HALF	600
 #define		TIMER_PERIOD_SECOND	1200 
-
 
 #define 	ASSERT(a)  if(a != ERROR_OK) goto error
 

@@ -86,8 +86,7 @@ int main()
 
 	ENABLE_INTERRUPTS();
 
-	wirebusSendCommand(WIREBUS_PRIORITY_INFO,WIREBUS_CMD_REBOOT,packet.src,0);
-
+	wirebusSendCommand(WIREBUS_PRIORITY_INFO,WIREBUS_ACK_INIT,packet.src,0);
 
 	while(1){
 	  

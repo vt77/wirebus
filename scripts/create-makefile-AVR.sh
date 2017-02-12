@@ -14,7 +14,7 @@ function create_makefile
 	echo 'all: wirbus' >> $MAKEFILENAME
 	echo -e "\nwirbus: $PROJECTNAME.c" >> $MAKEFILENAME
         echo -e "\t@echo 'Building target: \$@'" >> $MAKEFILENAME 
-	echo -e "\t \$(CC) -Os -mmcu=$MCU \$(DEFINES) -I../../include -I./ \$(LIBS) $TRANSPORT -o $PROJECTNAME.elf" >> $MAKEFILENAME
+	echo -e "\t \$(CC) -Os -mmcu=$MCU \$(DEFINES) -I../../include -I./ $PROJECTNAME.c \$(LIBS) $TRANSPORT -o $PROJECTNAME.elf" >> $MAKEFILENAME
 	echo -e "\t-avr-objdump -h -S $PROJECTNAME.elf  >"$PROJECTNAME.lss""	>> $MAKEFILENAME
         echo -e "\tavr-size --format=avr --mcu=attiny13a $PROJECTNAME.elf" >> $MAKEFILENAME
 	echo -e "\tavr-objcopy -j .text -j .data -O ihex $PROJECTNAME.elf ../../hex/$PROJECTNAME.hex" >> $MAKEFILENAME

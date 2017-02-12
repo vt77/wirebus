@@ -1,7 +1,7 @@
 
-#include <avr/io.h>
-//#include "transport.h"
-//.include "tn13Adef.inc"
+;#include <avr/io.h>
+;#include "transport.h"
+.include "tn13Adef.inc"
 
 
 #define		WIRE_PIN	1
