@@ -13,31 +13,10 @@ limitations under the License.
 
 */
 
-#include "wirebus.h"
+
 #include "config.h"
-
-#ifdef __ARCH_AVR__
-#include <avr/wdt.h>
-#include <avr/eeprom.h>
-#include <avr/interrupt.h>
-
-#define     save_device_addr(a)   eeprom_write_byte(0x0,a)
-#define     load_device_addr()    eeprom_read_byte(0x0)
-
-#define ENABLE_INTERRUPTS() 		sei()  
-
-#endif
-
-#ifdef __ARCH_PIC__
-#include <htc.h>
-
-#define     save_device_addr(a)   eeprom_write(0x0,a)
-#define     load_device_addr()    eeprom_read(0x0)
-
-#define ENABLE_INTERRUPTS() 		GIE=1  
-
-#endif
-
+#include "wirebus.h"
+#include "platform.h"
 
 #ifndef WIREBUS_UUID_MAJOR
 #error "Please define WIREBUS_UUID_MAJOR and WIREBUS_UUID_MINOR codes of your device"
@@ -46,74 +25,47 @@ limitations under the License.
 #error "Please define WIREBUS_UUID_MAJOR and WIREBUS_UUID_MINOR codes of your device"
 #endif
 
-
 wirebus_packet  packet;
-wirebus_device 	device;
+wirebus_device  device;
 
-uint8_t  volatile cmd;
 extern void setup();
-extern void loop();
-
-uint8_t    data_buffer[WIREBUS_MAX_DATA];
-
-wirebus_packet *wirebus_check_new_data()
-{
-	if( cmd != WIREBUS_CMD_NONE )
-	{
-		cmd = WIREBUS_CMD_NONE;
-		return &packet;
-	}
-	return 0;
-}
-
-void on_new_data()
-{
-	cmd = packet.hdr.cmd;
-}
-
+extern void loop(uint8_t cmd);
 
 int main()
 {
 
+
 	uint8_t	   pong_count  =   0;
-	device.addr = load_device_addr();
-	device.func = on_new_data;
-	packet.data = data_buffer;
 
-	wirebus_init();
-
+	wirebusInit( &device );
 	setup();
 
 	ENABLE_INTERRUPTS();
-
-	wirebusSendCommand(WIREBUS_PRIORITY_INFO,WIREBUS_ACK_INIT,packet.src,0);
+	wirebusSendMessage(WIREBUS_PRIORITY_INFO,WIREBUS_CMD_INIT,0xFF,&packet);
 
 	while(1){
-	  
-	  if( cmd != WIREBUS_CMD_NONE )
-	  {
-			switch( cmd )
-			{
-				case 	WIREBUS_CMD_PING:
-									cmd = WIREBUS_CMD_NONE;
-									wirebusSendCommand(WIREBUS_PRIORITY_INFO,WIREBUS_INFO_PONG,packet.src,pong_count++);
-									break;
-				case 	WIREBUS_CMD_REBOOT:
-									cmd = WIREBUS_CMD_NONE;
-									while(1); //Just halt and let wachdog do the job;
-				case 	WIREBUS_DATA_SETADDR:
-									cmd = WIREBUS_CMD_NONE;
-									save_device_addr(data_buffer[0]);
-									break;
-				case	WIREBUS_CMD_GETDEVICEINFO:
-									cmd = WIREBUS_CMD_NONE;	
-									data_buffer[0] = WIREBUS_UUID_MAJOR;
-									data_buffer[1] = WIREBUS_UUID_MINOR;
-									wirebusSendMessage(  WIREBUS_PRIORITY_MESSAGE,  WIREBUS_MESSAGE_DEVICEINFO , packet.src,  2, data_buffer );
-									break;
-			}
-	  }
-
-	  loop();
+		uint8_t cmd = wirebusProcess(&packet);
+		switch( cmd )
+		{
+			case 	WIREBUS_CMD_PING:
+								packet.p.data[0] = pong_count++;
+								wirebusSendMessage(WIREBUS_PRIORITY_INFO,WIREBUS_MESSAGE_PONG,packet.p.src,&packet);
+								break;
+			case 	WIREBUS_CMD_REBOOT:
+								while(1); //Just halt and let wachdog do the job;
+			case 	WIREBUS_MESSAGE_SETADDR:
+								save_device_addr(packet.p.data[0]);
+								break;
+			case	WIREBUS_CMD_GETDEVICEINFO:
+								packet.p.data[0] = WIREBUS_UUID_MAJOR;
+								packet.p.data[1] = WIREBUS_UUID_MINOR;
+								packet.p.size = 2;
+								wirebusSendMessage(  WIREBUS_PRIORITY_MESSAGE, WIREBUS_DATA_DEVICEINFO,packet.p.src, &packet );
+								break;
+			default:
+								loop( cmd );
+								break;
+		}
 	}
 }
+

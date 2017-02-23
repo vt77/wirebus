@@ -40,4 +40,10 @@
 #endif
 
 
+#define     save_device_addr(a)   eeprom_write(0x0,a)
+#define     load_device_addr()    eeprom_read(0x0)
+
+#define ENABLE_INTERRUPTS()             GIE=1 
+
+
 #endif

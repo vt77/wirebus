@@ -13,191 +13,204 @@ limitations under the License.
 
 */
 
-#include "wirebus.h"
 #include "config.h"
+#include <wirebus.h>
+#include <platform.h>
+#include <transport.h>
 
-extern uint8_t sendByte(uint8_t byte);
-extern uint8_t sendStart();
-extern void releaseLine();
-extern void transport_init();
+#ifdef __AVR_ARCH__
+register uint8_t flags_byte asm("r17");
+register uint8_t device_addr asm("r5");
+#else
+extern volatile uint8_t flags_byte;
+uint8_t device_addr;
+#endif
 
-extern wirebus_packet  		packet;
-extern wirebus_device 		device;    
+static uint8_t pos=0;
+static uint8_t total_bytes=0;
+static uint8_t crc;
+static uint8_t new_command = WIREBUS_CMD_NONE;
 
-volatile uint8_t crc 		 = 0;
-volatile uint8_t data_readed = 0;
+
+#ifdef USE_SOFTWARE_TIMER
+extern wirebus_timer_handler();
+#endif
 
 
-void wirebus_init()
-{
-	transport_init();
+
+#define CRC(a,b)  a^=b
+#define         EXTRACT_PRIORITY(a)     ( a >> 6 )
+#define         EXTRACT_COMMAND(a)   ( a & 0x3F)
+
+typedef void (*fsm_tran)(wirebus_packet *p);
+
+
+/************************************
+ *
+ *  Exported functions
+ *
+ * *********************************/
+
+
+void inline wirebusInit(wirebus_device * dev)
+{ 
+	transport_init();	
+	device_addr = load_device_addr();
 }
 
-
-/*
-
-Sends packet without data size byte.
-i.e WIREBUS_CMD orWIREBUS_INFO
-
-*/
-
-uint8_t wirebusSendCommand( uint8_t priority, uint8_t cmd , uint8_t dst, uint8_t data )
+uint8_t wirebusSendMessage(  uint8_t priority, uint8_t cmd,  uint8_t dst, wirebus_packet *p)
 {
+	p->p.cmd = ( priority << 6 ) | cmd;
+	//p->p.src = device->addr;
+	p->p.src = device_addr;
+	return sendStart();
+}
 
-	uint8_t header;
+//void wirebusProcess(wirebus_device *dev, wirebus_packet *p);
 
-	if( sendStart() == ERROR_TRANSMIT_ABORT )
-				return ERROR_TRANSMIT_ABORT;
 
-	header = ( priority << 6 ) | cmd;
+/************************************
+ *
+ *  Wirebus statemachine functions
+ *
+ * *********************************/
 
-	CRC(crc, header);
-	ASSERT( sendByte( header ) );
+
+/********************************************
+ *
+ *  Called when no operation shceduled 
+ *
+ * ******************************************/
+void sm_on_idle(wirebus_packet *p)
+{
+	//Nothing to do	
+#ifdef USE_SOFTWARE_TIMER
+	wirebus_timer_handler();
+#endif
+}
+
+/*********************************************
+ *
+ *  1. Called pereodiaclly each data cicle when line is in idle state
+ *  2. Called when reset detected from remote device. FLAG_RESET is set in this case
+ *
+ ********************************************/
+
+void sm_on_reset(wirebus_packet *p)
+{
+	if(flags_byte & FLAG_RESET )	
+		flags_byte != WIREBIS_STATE_RECV;
 	
-	CRC( crc, device.addr );
-	ASSERT( sendByte( device.addr ) );
+	flags_byte &= ~(WIREBIS_STATE_BREAK);
+}
 
-	CRC(crc,dst);
-	ASSERT( sendByte( dst ) );
+/**************************************************
+ *
+ *  Called when we're in receiving state
+ *  Bytes sequence
+ *  0 - Cmd + Proirity
+ *  1 - Source address
+ *  2 - Destination address
+ *  3 - CRC on COMMAND, data on INFO packet or size of data on MESSAGE
+ *  4 - CRC on INFO, or data for MESSAGE
+ *  .....  DATA 
+ *  n+1 CRC on DATA
+ *
+ *  Note:
+ *	This function not indicates errors while receiving. Bad packets just dropped.
+ *	May be not too good behaviour for debugging reason
+ *
+ * ***********************************************/
 
-	if( cmd & WIREBUS_INFO_BASE )
+void sm_on_receive(wirebus_packet *p)
+{
+	if( isTransportReady() )
 	{
-		CRC(crc,data);
-		ASSERT( sendByte( data ) );
+		uint8_t b = readByte();	
+		switch(pos)
+		{
+			case 0:
+		                crc = 0;
+				total_bytes =  ( ( b >> 4 ) & 0x3 ) + 3;  // 3 for command, 4-for info 6 for message
+				break;
+			case 2:
+				if(b!=0xFF && b!=device_addr ) //If not our address stop receiving 
+					flags_byte |= (WIREBIS_STATE_BREAK); 
+				break;
+			case 3:
+				if(total_bytes > 5) total_bytes += b; //Size of data 
+				break;
+		}
+
+		if(pos != total_bytes)
+		{
+			CRC(crc,b);
+			p->b[pos++] = b;
+			flags_byte &= ~(WIREBIS_STATE_COMPLETE);
+			return;
+		}	
+		else{
+			//check crc;
+			new_command = p->b[0];
+			flags_byte |= (WIREBIS_STATE_BREAK);	
+		}
 	}
-	
-	ASSERT( sendByte( crc ));
-
-	releaseLine();
-	return ERROR_OK;
-
-error:
-	releaseLine();
-	return ERROR_TRANSMIT_ABORT;
-}
-
-/*
-
-Sends packet with data size byte.
-i.e WIREBUS_MESSAGE
-
-*/
-
-uint8_t wirebusSendMessage(  uint8_t priority,  uint8_t cmd ,  uint8_t dst,  uint8_t size, const uint8_t *data )
-{
-	uint8_t tmp;
-
-	if( sendStart() == ERROR_TRANSMIT_ABORT )
-				return ERROR_TRANSMIT_ABORT;
-
-	tmp =  ( priority << 6 ) + cmd;
-
-	CRC(crc, tmp);
-	ASSERT( sendByte( tmp ) );
-
-	CRC(crc,device.addr);
-	ASSERT( sendByte( device.addr ) );
-
-	CRC(crc,dst);
-	ASSERT( sendByte( dst ) );
-
-	CRC(crc,size);
-	ASSERT( sendByte(size));	
-
-	for(tmp=0;tmp<size;tmp++)
-	{
-			CRC(crc,data[tmp]);
-			ASSERT(sendByte( data[tmp] ));
-	}
-
-	return sendByte( crc );
-
-error:
-	return ERROR_TRANSMIT_ABORT;
-
-}
-
-uint8_t  start_receive( uint8_t b )
-{
-	packet.size = ( b & 0b0110000 ) >> 4;
-	//packet.hdr.b = b;
-	packet.hdr.priority = PACKET_PRIORITY(b);
-	packet.hdr.cmd      = PACKET_COMMAND(b);
-
-	return WIREBUS_DEVICE_STATUS_READ_SRC_ADDR;	
-}
-
-uint8_t  set_src_addr( uint8_t b )
-{
-	packet.src = b;
-	return WIREBUS_DEVICE_STATUS_READ_DST_ADDR;	
-}
-
-uint8_t  set_dst_addr( uint8_t b )
-{
-		packet.dst = b;
-
-		if( b != device.addr && b != 0xFF )
-				return WIREBUS_DEVICE_STATUS_READY; //Skip packet
-
-		if( packet.size == 1 )
-				return WIREBUS_DEVICE_STATUS_READ_DATA;
-
-		if( packet.size > 1 )
-				return WIREBUS_DEVICE_STATUS_READ_DATA_SIZE;
-		
-		return WIREBUS_DEVICE_STATUS_READ_CRC;	
-}
-
-uint8_t  set_pkt_size(  uint8_t b )
-{
-		packet.size = b;	
-		return WIREBUS_DEVICE_STATUS_READ_DATA;
 }
 
 
-uint8_t  set_pkt_data( uint8_t b )
+void sm_on_send(wirebus_packet *p)
 {
-	//TODO WARNING ! Size of array not checked
-	//Buffer overflow possible 
-	packet.data[data_readed++] = b;
-	if( data_readed == packet.size) 
-			return WIREBUS_DEVICE_STATUS_READ_CRC;	
-
-	return WIREBUS_DEVICE_STATUS_READ_DATA;
+        if( isTransportReady() )
+        {
+                //Send next byte        
+                if(pos == 0)
+                        crc = 0;
+                
+		if( pos < total_bytes )
+                {
+                        uint8_t b = p->b[pos++];
+                        CRC(crc,b);
+                        sendByte(b);
+                }else
+                   flags_byte &= ~(WIREBIS_STATE_SEND);
+        }
 }
 
-uint8_t check_crc ( uint8_t b )
+/***********************************
+ *
+ *  Break occures while operation.
+ *  It may be number of reasons
+ *  1. Arbitration while sending packet
+ *  2. Receive packet not addressed to us.
+ *  3. We're not fast enouph to receive packet. (should never happen) 
+ *
+ * *******************************/
+
+void sm_on_break(wirebus_packet *p)
 {
-	if(crc == b)
-		if(device.func) device.func();
-	return WIREBUS_DEVICE_STATUS_READY;
+	//Error occures while processing data;
+	//Reset all received states
+	pos = 0;
+	total_bytes = 0;
 }
 
-#define BEGIN_STATE_MACHINE(a)   switch( a ){
-#define END_STATE_MACHINE		 }	
-#define BRANCH(a,b)		case a: device.state = b; break;
+fsm_tran fsm[] = {
+	sm_on_idle,		/* WIREBIS_STATE_IDLE   0x0  */
+	sm_on_reset,		/* WIREBIS_STATE_BREAK  0x01 Fired each timer data tick when line idle (timer_period * 2) */
+	sm_on_send,		/* WIREBIS_STATE_SEND   0x02 */
+	sm_on_break,		/* WIREBIS_STATE_SEND | WIREBIS_STATE_BREAK 0x03 */
+	sm_on_receive,          /* WIREBIS_STATE_RECV | 0x04 Fired each time we're receiving data */
+        sm_on_break,    	/* WIREBIS_STATE_RECV | WIREBIS_STATE_BREAK 0x05 Break while receiving*/
+};
 
-uint8_t onByteReceived(uint8_t pos, uint8_t b)
+uint8_t wirebusProcess(wirebus_packet *p)
 {
+	uint8_t ptr = flags_byte & 0x07;
+	if(ptr < 6)
+		fsm[ptr](p);
 
-	if(0 == pos ) 
-		device.state =  WIREBUS_DEVICE_STATUS_READ_START;
-
-	if( device.state != WIREBUS_DEVICE_STATUS_READ_CRC)
-		CRC(crc,b);
-
-	BEGIN_STATE_MACHINE(device.state)
-		BRANCH(	WIREBUS_DEVICE_STATUS_READ_START,  	   start_receive (b) )
-		BRANCH(	WIREBUS_DEVICE_STATUS_READ_SRC_ADDR,   set_src_addr  (b) )
-		BRANCH(	WIREBUS_DEVICE_STATUS_READ_DST_ADDR,   set_dst_addr  (b) )
-		BRANCH(	WIREBUS_DEVICE_STATUS_READ_DATA_SIZE , set_pkt_size  (b) )
-		BRANCH(	WIREBUS_DEVICE_STATUS_READ_DATA ,      set_pkt_data  (b) )
-		BRANCH(	WIREBUS_DEVICE_STATUS_READ_CRC ,       check_crc     (b) )
-	END_STATE_MACHINE
-
-	if( device.state == WIREBUS_DEVICE_STATUS_READY) 
-						return 0xFF;  //Complete
-	return ERROR_OK;
+	ptr = new_command;
+	new_command = WIREBUS_CMD_NONE;
+	return ptr;	
 }
 

@@ -7,7 +7,7 @@ Simple one wire protocol for microcontrollers communication. Protocol was design
 __Features:__
 
 * No master required. All devices may talk each other
-* Only one wire needed in simple mode or LVDS for long lines
+* Only one wire needed in simple mode. LVDS may be used for long lines
 * Small footprint as about 700k
 * Collision resolving 
 * ISO/IEC CD 30141 compatible
@@ -25,13 +25,13 @@ __src__ and __include__ directories - no surprise,  precisely what its name sugg
 
 __devices__  - directory where units projects placed. Each project has mcu and architecture in its name. __noarc__ says device may be compiled for any supported architecture (avr,pic,stm)
 
-__connectors__  - Devices to connect wirebus network to external. For now __ttl__ to connect to host devices like Raspberry, or PC using TTL to USB converter. __esp8266__ - connects to WiFi network (under havy development) __arduino__ - exactly what it says.
+__connectors__  - Devices to connect wirebus network to external. For now __uart__ to connect to host devices like Raspberry, or PC using TTL to USB converter. __esp8266__ - connects to WiFi network (under havy development)
 
-
+__arduino__  - exactly what it says. Wirebus port for Arduino
 
 ### Supported architectures
 
-See scripts/platforms.dat for supported chips 
+See scripts/platforms.dat for supported MCUs 
 
 
 ### Creating new project
@@ -59,6 +59,8 @@ Just pull request for your project to be included in device tree. We will check 
 
 ------------------------------------
 ## History
+23.02.17  Version 2.1b. Full code refactoring  
+
 23.01.17  STM8 support added, not tested 
 
 22.12.16  PIC12 support added
