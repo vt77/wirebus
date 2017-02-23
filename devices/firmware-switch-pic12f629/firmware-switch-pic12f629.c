@@ -1,4 +1,6 @@
 
+#include <config.h>
+#include <wirebus.h>
 
 extern uint8_t  cmd;
 extern wirebus_packet  packet;
@@ -18,7 +20,7 @@ void loop()
 	}else if(cmd == WIREBUS_DATA_SWITCH)
 	{	
 		//Switch pin according to data byte
-		switch( packet.data == 1 )
+		switch( packet.data[0] == 1 )
 		{
 			case 1:
 				//Switch full
