@@ -32,6 +32,11 @@ function print_platforms
 	exit;
 }
 
+function dump_gcc_vars
+{
+	avr-gcc -dM -E - < /dev/null
+}
+
 while true; do	
 	case "$1" in
 		-h | --help) print_help ;;

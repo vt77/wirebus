@@ -2,22 +2,21 @@
 #define _WIREBUS_DEVICES_PIC12F629
 #define WIREBUS_MCU	pic12F629
 
-//Define pins
+#define __PIC12__
 
-#define 		WIRE_RX_PIN  		0 
-#define 		WIRE_TX_PIN       	1
+#include "arch/pic.h"
 
 //
-//  Setup timer to fire interrupt per 0.5 ms  ( 250 uSec tick for fast line)
+//  Setup timer to fire interrupt per 0.5 ms
 //  Procedures to start and stop timer
 //
 
-#define		 WIREBUS_BIT_DELAY    ( 255 - (0.0005/0.000004) )
+#define		 WIREBUS_BIT_DELAY    (uint8_t)( 255 - (0.0005/0.000004) )
 #define		 SETUP_TIMER     	   OPTION_REG = PS1
 
 #define 	START_TIMER     	   	T0IE = 1
 #define 	STOP_TIMER  			T0IE = 0
-#define     RESET_TIMER 			TMR0 = WIREBUS_BIT_DELAY    
+#define     	RESET_TIMER 			TMR0 = WIREBUS_BIT_DELAY    
 
 //
 //  
@@ -25,27 +24,31 @@
 //  Fire interrupt on pinchange
 //
 
-#define			SETUP_WIREPIN	\
-									TRISIO ## WIRE_TX_PIN = 0;\
-									GPIO ## WIRE_RX_PIN = 1;\
+#define			SETUP_WIREPIN    INPUT(WIREBUS_RX_PIN);
 
 //External interrupt  rasing edge
-#define         START_RECEIVER		INTEDG     = 1;              					
-#define         STOP_RECEIVER		INTEDG     = 0;              					
+#define	START_RECEIVER		INTEDG     = 1;              					
+#define	STOP_RECEIVER		INTEDG     = 0;              					
 
 //
 //  Wire PIN manipulations. 
 //  For SPACE and MARK states defenitions please refer to circuit diagram
 //
 
-#define SET_MARK        GPIO ## WIRE_TX_PIN = 1
-#define SET_SPACE       GPIO ## WIRE_TX_PIN = 0
 
-#define READ_WIRE_STATE GPIO ## WIRE_RX_PIN
+#define SET_MARK 	HIGH(WIREBUS_TX_PIN)
+#define SET_SPACE 	LOW(WIREBUS_TX_PIN)
+
+#define READ_WIRE_STATE	READ(WIREBUS_RX_PIN)
 
 //Arch depended defines
-#define ISR(a)   inline void isr_ ## a ()
-#define PINCHANGE_VECTOR pin_change
-#define TIMER_CTC_VECTOR timer_ovf
+
+#define _PIC12F683_PCONCAT(a,b)		a ## b	
+
+
+#define ISR(vec)   inline void _PIC12F683_PCONCAT(isr_,vec) ()
+
+#define	PINCHANGE_VECTOR	pin_change
+#define	TIMER_VECTOR		timer_ovf
 
 #endif

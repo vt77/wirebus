@@ -3,16 +3,6 @@
 
 #include  <stdint.h>
 
-#ifdef __ARCH_AVR__
-#include <avr/io.h> 
-#include <avr/interrupt.h>
-#endif
-
-#ifdef __ARCH_PIC__
-#include <htc.h>
-#endif
-
-
 #ifndef WIREBUS_RX_PIN 
 #error Please define WIREBUS_RX_PIN
 #endif
@@ -27,56 +17,39 @@
 
 #define MIN_PREAMBULE_LENGHT	6
 
-#ifdef __MCU_attiny2313__
-#include "mcu/attiny2313.h"
-#endif
-
-#ifdef __MCU_attiny13__
-#include "mcu/attiny13.h"
-#endif
-
-#ifdef  __MCU_attiny85__
-#include "mcu/attiny85.h"
-#endif
-
-
-#ifdef __MCU_12f629__ 
-#include "mcu/pic12f629.h"
-#endif
-
-#ifdef __MCU_12f683__ 
-#include "mcu/pic12f683.h"
-#endif
-
-#ifdef __MCU_stm8s__
-#include "mcu/stm8.h"
-#endif
-
-#ifdef __MCU_stm8l__
-#include "mcu/stm8.h"
-#endif
-
 
 #ifndef WIREBUS_MCU
-#error "Unknown microcontroller. Check devices.txt  for list of known devices and platforms"
+#error "Unknown microcontroller. Check please include platform.h BEFORE transport.h"
 #endif
 
 #define			DELAY(a)		delayTicks(a)		
 
-#ifdef __GNUC__
-#define NOINLINE __attribute__((noinline))
-#define INLINE   __attribute__((always_inline))
-#endif
 
-#ifdef __XC8__
-#define NOINLINE noinline
-#define INLINE   inline
-#endif
+/* Flags used by statemachine in wirebus.c */
+
+#define         WIREBIS_STATE_IDLE      0x0     /* Default state, set by resetting all flags */
+#define         WIREBIS_STATE_BREAK     0x01    /* First possible state offset */
+#define         WIREBIS_STATE_SEND      0x02
+#define         WIREBIS_STATE_RECV      0x04
+#define         WIREBIS_STATE_COMPLETE  0x08
+
+/* Line state flags */
+#define         FLAG_MARK               0x10 
+#define         DATA_TICK               0x20
+#define         BIT_ONE                 0x40
+#define         FLAG_RESET              0x80
 
 
 uint8_t sendByte(uint8_t byte);
 uint8_t sendStart();
-void releaseLine();
-void transport_init();
+uint8_t isTransportReady();
+
+void    releaseLine();
+void    transport_init();
+
+enum pinState{
+        PIN_STATE_SPACE                         =       0,
+        PIN_STATE_MARK                          =       1
+};
 
 #endif
