@@ -1,7 +1,7 @@
 #ifndef _INPUT_PIN_H
 #define _INPUT_PIN_H
 
-#ifdef __PIC12__
+#ifdef __PIC12ARCH__
 
 #define _SET(type,name,bit)          type ## bit = 1
 #define _CLEAR(type,name,bit)        type ## bit = 0

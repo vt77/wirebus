@@ -111,7 +111,8 @@ typedef union{
 
 enum  wirebusErrorCode {
         ERROR_OK                                =   0,
-        ERROR_TRANSMIT_ABORT                    =   1
+        ERROR_TRANSMIT_ABORT                    =   1,
+	ERROR_BUSY				=   2
 };
 
 #define         ASSERT(a)  if(a != ERROR_OK) goto error
@@ -127,5 +128,6 @@ typedef struct sWirebusDevice
 void    wirebusInit(wirebus_device *dev);
 uint8_t wirebusSendPacket( wirebus_packet *p );
 uint8_t wirebusSendMessage( uint8_t priority, uint8_t cmd , uint8_t dst, wirebus_packet *p );
+uint8_t wirebusProcess(wirebus_packet *p);
 
 #endif

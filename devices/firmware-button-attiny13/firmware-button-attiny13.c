@@ -13,30 +13,21 @@ limitations under the License.
 
 */
 
-
+#include <stdint.h>
 #include "config.h"
-#include "wirebus.h"
-#include "platform.h"
+#include <platform.h>
+#include <wirebus.h>
 
-#ifndef WIREBUS_UUID_MAJOR
-#error "Please define WIREBUS_UUID_MAJOR and WIREBUS_UUID_MINOR codes of your device"
-#endif
-#ifndef WIREBUS_UUID_MINOR
-#error "Please define WIREBUS_UUID_MAJOR and WIREBUS_UUID_MINOR codes of your device"
-#endif
 
 wirebus_packet  packet;
 wirebus_device  device;
 
-extern void setup();
-extern void loop(uint8_t cmd);
+uint8_t buttons_state;
 
 int main()
 {
-	uint8_t	   pong_count  =   0;
 
-	wirebusInit( &device );
-	setup();
+	wirebusInit( &device );	
 
 	ENABLE_INTERRUPTS();
 
@@ -48,30 +39,42 @@ int main()
 		uint8_t * data_ptr  = &packet.p.size;
 		uint8_t src 	    =  packet.p.src;
 
+		/* 
+ 		*  Due to really small memory size 
+ 		*  only limited commands set supported 
+ 		*  by this device
+ 		*
+ 		*  WIREBUS_MESSAGE_SETADDR is disabled.
+ 		*  You can change device address manualy writing it to EEPROM at offset 0 	
+ 		*
+ 		*/
+
 		switch( cmd )
-		{
-			case 	WIREBUS_CMD_PING:
-								*data_ptr++ = 1;	
-								*data_ptr++ = pong_count++; 
-								wirebusSendMessage(WIREBUS_PRIORITY_INFO,WIREBUS_MESSAGE_PONG,src,&packet);
-								break;
+		{		
 			case 	WIREBUS_CMD_REBOOT:
 								while(1); //Just halt and let wachdog do the job;
-			case 	WIREBUS_MESSAGE_SETADDR:
-								save_device_addr(packet.p.data[0]);
-								break;
+			//case 	WIREBUS_MESSAGE_SETADDR:
+			//					save_device_addr(packet.p.data[0]);
+			//					break;
 			case	WIREBUS_CMD_GETDEVICEINFO:
 								*data_ptr++ = 2;
 								*data_ptr++ = WIREBUS_UUID_MAJOR;
 								*data_ptr++ = WIREBUS_UUID_MINOR;
 								wirebusSendMessage(  WIREBUS_PRIORITY_MESSAGE, WIREBUS_DATA_DEVICEINFO,src, &packet );
 								break;
-			default:
-								loop( cmd );
-								break;
+		}
+
+		if( buttons_state )
+		{
+			wirebusSendMessage(WIREBUS_PRIORITY_INFO,WIREBUS_CMD_INIT,0xFF,&packet);
 		}
 
 	}
 
+}
+
+ISR(PCINT0_vect)
+{
+	buttons_state = PORTB;
 }
 
