@@ -53,12 +53,12 @@
 
 #ifdef __GNUC__
 #define NOINLINE __attribute__((noinline))
-#define INLINE   __attribute__((always_inline))
+#define INLINE   __attribute__((always_inline)) inline
 #endif
 
 #ifdef __XC8__
-#define NOINLINE noinline
-#define INLINE   inline
+#define NOINLINE 
+#define INLINE   
 #endif
 
 

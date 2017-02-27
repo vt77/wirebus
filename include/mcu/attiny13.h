@@ -5,8 +5,8 @@
 
 #include "arch/avr.h"
 
-#define                 START_RECEIVER  MCUCR = (1<<ISC00); GIMSK=(1<< INT0);
-#define                 STOP_RECEIVER   GIMSK=0;
+#define                 START_RECEIVER()  MCUCR = (1<<ISC01); GIMSK=(1<< INT0);
+#define                 STOP_RECEIVER()   GIMSK=0;
 
 //Timer definitions
 #define         NOW             TCNT0

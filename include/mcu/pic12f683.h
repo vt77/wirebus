@@ -16,8 +16,7 @@
 
 #define 	START_TIMER     	   	T0IE = 1
 #define 	STOP_TIMER  			T0IE = 0
-#define     	RESET_TIMER 			TMR0 = WIREBUS_BIT_DELAY    
-
+#define 	RESET_TIMER(a)  		TMR0=a
 //
 //  
 //  Procedures to setup wirebus pins
@@ -27,8 +26,8 @@
 #define			SETUP_WIREPIN    INPUT(WIREBUS_RX_PIN);
 
 //External interrupt  rasing edge
-#define	START_RECEIVER		INTEDG     = 1;              					
-#define	STOP_RECEIVER		INTEDG     = 0;              					
+#define	START_RECEIVER()	INTEDG     = 1;              					
+#define	STOP_RECEIVER()		INTEDG     = 0;              					
 
 //
 //  Wire PIN manipulations. 
@@ -36,8 +35,8 @@
 //
 
 
-#define SET_MARK 	HIGH(WIREBUS_TX_PIN)
-#define SET_SPACE 	LOW(WIREBUS_TX_PIN)
+#define SET_MARK() 	HIGH(WIREBUS_TX_PIN)
+#define SET_SPACE() 	LOW(WIREBUS_TX_PIN)
 
 #define READ_WIRE_STATE	READ(WIREBUS_RX_PIN)
 

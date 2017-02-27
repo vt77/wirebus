@@ -21,49 +21,74 @@ Disclaimer:
 #include "transport.h"
 #include "wirebus.h"
 
-
-//typedef void (*fsm_dispatch)();
-uint8_t onByteReceived(uint8_t pos, uint8_t b);
-
-#ifdef __AVR_ARCH__
-register volatile uint8_t data_byte asm("r13");
-register uint8_t flags_byte asm("r17");
-register uint8_t bits_to_send asm("r15");
-register uint8_t counter asm("r2");
-#else
 static volatile uint8_t data_byte;
-static volatile uint8_t bits_to_send;
+static volatile uint8_t bits_to_process;
 volatile uint8_t flags_byte;
+
+#ifdef USE_SOFTWARE_TIMER
+volatile uint8_t timer_now;
 #endif
 
 
-
-void inline transport_init()
+void INLINE transport_init()
 {
         SETUP_WIREPIN;
 	START_TIMER;
-        START_RECEIVER;
+        START_RECEIVER();
 }
 
+
+void INLINE transport_reset()
+{
+	START_RECEIVER();
+}
 
 /****************************************************
 *
-* This two functions should be called pereodically 
-* We have queue size of one byte only. So program should empty it fast enough  
+* This function should be called pereodically in loop at least once per timer tick, when FLAG_RECV set 
+* We have queue size of one byte only. So program should empty it fast enough 
+*
+* NOTE: We should not clear FLAG_RECV 
+* 
+* Exeaple to call:
+*   uint8_t res = readByte(&b);
+*   if( res == ERROR_TRANSMIT_ABORT )
+*   {
+*   	//Abort receiving 
+*   }
+*
+*   if(readByte(&b) == ERROR_OK)
+*   {
+*   	//Process byte in b
+*   }
+*
 *
 *****************************************************/
 
-uint8_t inline isTransportReady()
+uint8_t readByte(uint8_t* byte)
 {
-        return flags_byte & WIREBIS_STATE_COMPLETE;
-}
 
-uint8_t inline readByte()
-{
-        flags_byte &= ~(WIREBIS_STATE_COMPLETE);
-        uint8_t ret = data_byte;
-        data_byte = 0x01;
-        return ret;
+	uint8_t local_flags = flags_byte;
+
+	if( (local_flags & FLAG_RECV ) == 0 )
+				return ERROR_TRANSMIT_ABORT;
+
+	if( ( local_flags & FLAG_DATA ) == 0 )
+				return ERROR_BUSY;
+
+	if( ( local_flags & FLAG_COMPLETE ) == 0 )
+                               	return ERROR_BUSY;
+
+	if(bits_to_process != 0)
+				return ERROR_BUSY;
+
+	*byte = data_byte;
+	local_flags &= ~FLAG_COMPLETE;
+	bits_to_process = 8;
+
+	flags_byte = local_flags;
+      
+	return ERROR_OK;
 }
 
 
@@ -72,84 +97,99 @@ uint8_t inline readByte()
 *  Sends 5 marks + 1 space to occupy line 
 *
 *******************************************/
-uint8_t inline sendStart()
+uint8_t sendStart()
 {
-        if( flags_byte != WIREBIS_STATE_IDLE )
-                                        return ERROR_TRANSMIT_ABORT;
+
+	uint8_t local_flags = flags_byte;
+
+        if( local_flags & (FLAG_SEND|FLAG_RECV) )
+                         return ERROR_TRANSMIT_ABORT;
+
 
 	//Take over the line
- 	flags_byte |= WIREBIS_STATE_SEND;
-	RESET_TIMER(0);	
-	flags_byte &= ~DATA_TICK; //First tick always sync	
+	STOP_RECEIVER();
+	RESET_TIMER(0);
+	local_flags |= FLAG_SEND;	
+	local_flags &= ~FLAG_BIT; //First tick is sync
+	SET_MARK();
 
-	SET_MARK(WIREBUS_TX_PIN);
-	while( (flags_byte & WIREBIS_STATE_BREAK|FLAG_RESET) == 0 ){};	
-	flags_byte &= ~(WIREBIS_STATE_BREAK|FLAG_RESET);
-	SET_SPACE(WIREBUS_TX_PIN);
+	flags_byte = local_flags;
+
+	//Now wait for line released by timer
+	//When line released FLAG_COMPLETE will be set
+
 	return ERROR_OK;
 }
 
 /******************************************
 *
-*  Sets data to send by timer 
+*  Sets data to send by timer.Should be called pereodically from loop at least once per timer tick
+*
+*  Example to call : 
+*  uint8_t res = sendByte(buffer[ptr]);
+*  if( res == ERROR_TRANSMIT_ABORT) //Arbitation fails. Stop transmitting
+*  if( res == ERROR_OK )
+*  {
+*  	//Send next byte in sequence if any
+*  	sendByte(buffer[ptr]); 
+*  }
 *
 ******************************************/
 uint8_t sendByte(uint8_t byte)
-{	
-	data_byte 	= byte;
-	bits_to_send 	= 8;
-        return ERROR_OK;
+{
+
+	uint8_t local_flags = flags_byte;	
+
+	if( local_flags & FLAG_BREAK )
+				return ERROR_TRANSMIT_ABORT; 
+
+	//Still in progress
+	if( ( local_flags & (FLAG_COMPLETE|FLAG_SEND) ) == (FLAG_SEND) )
+					return ERROR_BUSY;
+
+	//First bit in sequence
+	if( ( local_flags & FLAG_DATA ) == 0 )
+	{
+		data_byte       = byte;
+		bits_to_process    = 8;		
+		local_flags = (FLAG_SEND|FLAG_DATA);
+	}
+
+	//Till all bits processed
+	else if( --bits_to_process == 0 )
+	{
+		flags_byte  = FLAG_IDLE;
+		return ERROR_OK;
+	}
+
+	flags_byte = local_flags;	
+
+        return ERROR_BUSY;
 }
 
 
 /*************************************************************************
  * 
- *  Pin change vector . Size 36 bytes
+ *  Pin change vector . Fired on falling edge. Disabled while sending
  *
  * **********************************************************************/
 
 ISR( PINCHANGE_VECTOR )
 {
+	uint8_t local_flags = flags_byte;
 
-	uint8_t local_flags = flags_byte;	
+	//We're not fast enough to fetch data duting one timer tick
+	//if((flags_byte & (FLAG_RECV|FLAG_COMPLETE)) == (FLAG_RECV|FLAG_COMPLETE) )
+	//		flags_byte |= FLAG_BREAK;
 
-	//Update line state flag	
-	if( READ_WIRE_STATE == PIN_STATE_MARK )
-			local_flags |= FLAG_MARK;
-	else
-			local_flags &= ~FLAG_MARK;
-		
-	//Don't care line level changes while sending
-	if( local_flags & ( WIREBIS_STATE_SEND )  ) 
-		goto exit_pinchange_isr;
 
-	//Receiver function: 
-	//On falling edge set timer to half of bit period
-	//to fire timer interrupt in center of each bit
-		
-	if( local_flags & FLAG_MARK )
-	{
-		RESET_TIMER(WIREBUS_BIT_DELAY/2); //Fire timer on center of bit delay
-        	flags_byte &= ~DATA_TICK; //First tick always sync
-		goto exit_pinchange_isr;
-	}
+	//Set timer to fire in center of tick period
+	RESET_TIMER(WIREBUS_BIT_DELAY/2);
+	local_flags &= ~(FLAG_RESET|FLAG_ONE);
+	local_flags |= (FLAG_RECV);
 
-	if( local_flags & WIREBIS_STATE_RECV  )
-	{			
+	flags_byte = local_flags;
 
-		//Check last bit in sending sequence;  		
-		if( local_flags & 0x80 )
-			local_flags |= WIREBIS_STATE_COMPLETE;
-
-		data_byte << 1;
-		if( local_flags & BIT_ONE ) 
-			data_byte &= 0x01;
-
-	}
-
-exit_pinchange_isr:
-	local_flags |= ~BIT_ONE;   //Reset counter flag on every level change
-	flags_byte = local_flags; 
 }
 
 
@@ -172,69 +212,94 @@ exit_pinchange_isr:
  *     Size : 78 bytes (From 680bytes) 
  *
  ********************************************************************/
- 
+
+
+
 ISR( TIMER_VECTOR )
 {
 
 	uint8_t local_flags = flags_byte;
-
-	if( local_flags & DATA_TICK )
-	{
-
-	     if( local_flags & BIT_ONE )
-	     {
-                //5-th or more data tick in series of the same level
-		local_flags |= WIREBIS_STATE_BREAK;
-		if(local_flags & FLAG_MARK)
-		{
-			//If line is in MARK state RESET
-			local_flags|=FLAG_RESET;
-		}else{
-			//Reset state machine on external break pulse
-			local_flags &= ~(WIREBIS_STATE_RECV|WIREBIS_STATE_SEND);
-		}
-
-		SET_SPACE(WIREBUS_TX_PIN); //Always(!) release line  on break
-
-		goto exit_isr;
-	     }
-
-	     local_flags &= BIT_ONE;
-	}
-
-	if(bits_to_send)
-	{
-
-		if( (local_flags & DATA_TICK ) == 0 )
-		{
-			//When sending sync tick is always mark
-			SET_MARK();
-			goto exit_isr;
-		}
-
-		if(data_byte & 0x80)
-		{
-			//If sending bit is one, continue holdin line in space state
-			//And reset sending bit to zero, so next data tick will release the line
-			data_byte &= ~(0x80);
-			goto exit_isr;
-		}
-		
-		bits_to_send--;
-                
-		if( !bits_to_send )
-                          local_flags |= WIREBIS_STATE_COMPLETE;	
 	
-		//Release line and arbitrate 
-		SET_SPACE(WIREBUS_TX_PIN);
-        	NOP();
-        	if( READ_WIRE_STATE == PIN_STATE_MARK ) //Some one else hold line down, Collision detected
-                        local_flags |= WIREBIS_STATE_BREAK;
+	switch(local_flags)
+	{
+		//Flags When FLAG_SEND is set, 16 and up + 7 
+                //case (FLAG_SEND|FLAG_RESET|FLAG_BIT):                     //0x15          
+                     //We sent reset
+                //     local_flags |= FLAG_COMPLETE;
+                //     break;
+ 
+		case (FLAG_SEND|FLAG_DATA):				//0x50  First sync tick when sending. Hold line down
+				SET_MARK();				
+				break;
 
+		case (FLAG_SEND|FLAG_DATA|FLAG_BIT):			//0x51
+				if(data_byte & 0x80) 			//Check we're sending 'one'		
+						break;			//If not, continue to release line process
+
+		case (FLAG_SEND|FLAG_DATA|FLAG_BIT|FLAG_ONE):		//0x53 Release line process
+				SET_SPACE();
+				NOP();
+				NOP();
+				//Arbitrate
+			        if( READ_WIRE_STATE == PIN_STATE_MARK )
+						local_flags |= FLAG_BREAK;
+				local_flags |= FLAG_COMPLETE;
+				break;	
+		
+		//Flags when FLAG_RECV is set 32 and up + 7
+		case (FLAG_RECV|FLAG_RESET|FLAG_BIT):			//0x25  //We got reset from remote side
+				local_flags |= FLAG_DATA;
+				bits_to_process = 8;
+				break;
+
+		case (FLAG_RECV|FLAG_DATA|FLAG_BIT):	
+				bits_to_process--;
+				data_byte << 1;				//Zero timing, just shift	
+				break;
+
+                case (FLAG_RECV|FLAG_DATA|FLAG_BIT|FLAG_ONE):
+                                data_byte |= 0x01;                       //One timing, set 'one'      
+                                break;
+
+		//Idle states. 
+		case FLAG_BREAK:
+			transport_reset(); 					
+			local_flags = FLAG_IDLE;
+			break;
 	}
 
-exit_isr:
-	local_flags ^= DATA_TICK;	
+	if( READ_WIRE_STATE != PIN_STATE_MARK )
+			local_flags |= FLAG_COMPLETE;								
+	
+	local_flags++;   //Transition to next state 
 	flags_byte = local_flags;
+
+#ifdef USE_SOFTWARE_TIMER
+		timer_now++;
+#endif
+
 }
+
+
+#if __ARCH_PIC__
+
+void interrupt inter(void)
+{
+   GIE = 0; // CLI
+ 
+   if ((T0IF)&&(T0IE))
+   {
+		isr_timer_ovf();
+		T0IF = 0;
+   }
+   if (INTCON&0b00000001)
+   {
+		isr_pin_change();
+	    //TCON&=0b11111110;		//Clearing the interrupt flag RBIF
+   }
+	INTCON |= 0b10001000;	//Re enabling the interrupt
+}
+
+#endif
+
 

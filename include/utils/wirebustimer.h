@@ -8,12 +8,15 @@
 #include <stdint.h>
 
 
+extern volatile uint8_t timer_now;
+
 uint16_t	wirebus_time_elapsed;
 typedef uint8_t (*timer_func)(uint8_t);
 
 typedef struct{
 	uint8_t period;
 	uint8_t curr_time;
+	uint8_t start_time;
 	timer_func func;
 	uint8_t param;
 }wirebus_timer;
@@ -27,6 +30,7 @@ uint8_t inline timer_setup(wirebus_timer* timer,uint8_t period,timer_func f, uin
 	timer_ptr->param = param;		
 	timer_ptr->period = period;
 	timer_ptr->curr_time = 0;
+	timer_ptr->start_time = 0;
 	return 0;
 }
 
