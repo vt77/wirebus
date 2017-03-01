@@ -33,9 +33,8 @@
 //#define SET_MARK         HIGH(WIREBUS_TX_PIN)
 //#define SET_SPACE        LOW(WIREBUS_TX_PIN) 
 
-#define SET_MARK(a)         DDRB |= (1 << 1)
-#define SET_SPACE(a)        DDRB &= ~(1 << 1)
-
+#define SET_MARK(a)         ( DDRB |= (1 << 1) )
+#define SET_SPACE(a)        ( DDRB &= ~(1 << 1) )
 
 #define  _GET_TX_PIN(a,b)   PINB && (1 << b)
 //BUG: _GET_TX_PIN(B,1) should be  _GET_TX_PIN(WIREBUS_TX_PIN)

@@ -40,20 +40,19 @@ int main()
 
 	ENABLE_INTERRUPTS();
 
-	wirebusSendMessage(WIREBUS_PRIORITY_INFO,WIREBUS_CMD_INIT,0xFF,&packet);
+	wirebusSendMessage(&device, WIREBUS_PRIORITY_INFO,WIREBUS_CMD_INIT,0xFF,&packet);
 
 	while(1){
 
-		uint8_t cmd = wirebusProcess(&packet);
-		uint8_t * data_ptr  = &packet.p.size;
-		uint8_t src 	    =  packet.p.src;
+		uint8_t cmd = wirebusProcess(&device, &packet);
+		uint8_t dst 	    =  packet.p.src;
 
 		switch( cmd )
 		{
 			case 	WIREBUS_CMD_PING:
-								*data_ptr++ = 1;	
-								*data_ptr++ = pong_count++; 
-								wirebusSendMessage(WIREBUS_PRIORITY_INFO,WIREBUS_MESSAGE_PONG,src,&packet);
+								packet.p.size = 1;	
+								packet.p.data[0] = pong_count++; 
+								wirebusSendMessage(&device,WIREBUS_PRIORITY_INFO,WIREBUS_MESSAGE_PONG,dst,&packet);
 								break;
 			case 	WIREBUS_CMD_REBOOT:
 								while(1); //Just halt and let wachdog do the job;
@@ -61,10 +60,10 @@ int main()
 								save_device_addr(packet.p.data[0]);
 								break;
 			case	WIREBUS_CMD_GETDEVICEINFO:
-								*data_ptr++ = 2;
-								*data_ptr++ = WIREBUS_UUID_MAJOR;
-								*data_ptr++ = WIREBUS_UUID_MINOR;
-								wirebusSendMessage(  WIREBUS_PRIORITY_MESSAGE, WIREBUS_DATA_DEVICEINFO,src, &packet );
+								packet.p.size = 2;
+								packet.p.data[0] = WIREBUS_UUID_MAJOR;
+								packet.p.data[1] = WIREBUS_UUID_MINOR;
+								wirebusSendMessage(&device,WIREBUS_PRIORITY_MESSAGE, WIREBUS_DATA_DEVICEINFO,dst, &packet );
 								break;
 			default:
 								loop( cmd );

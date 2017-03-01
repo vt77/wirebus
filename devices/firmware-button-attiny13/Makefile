@@ -10,4 +10,4 @@ wirbus: firmware-button-attiny13.c
 	-avr-objdump -h -S firmware-button-attiny13.elf  >firmware-button-attiny13.lss
 	avr-size --format=avr --mcu=attiny13a firmware-button-attiny13.elf
 	avr-objcopy -j .text -j .data -O ihex firmware-button-attiny13.elf ../../hex/firmware-button-attiny13.hex
-
+	avr-objcopy -j .eeprom --set-section-flags=.eeprom="alloc,load" --change-section-lma .eeprom=0 -O ihex firmware-button-attiny13.elf firmware-button-attiny13.eep

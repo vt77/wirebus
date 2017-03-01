@@ -18,9 +18,7 @@ limitations under the License.
 #include <platform.h>
 #include <transport.h>
 
-extern volatile uint8_t flags_byte;
-uint8_t device_addr;
-
+extern uint8_t flags_byte;
 static uint8_t buff[WIREBUS_MAX_DATA+5];
 
 static uint8_t pos=0;
@@ -57,11 +55,11 @@ uint8_t calc_crc(uint8_t *ptr,uint8_t size)
 
 void INLINE wirebusInit(wirebus_device * dev)
 { 
-	transport_init();	
-	device_addr = load_device_addr();
+	transportInit();	
+	dev->addr = load_device_addr();
 }
 
-uint8_t wirebusSendMessage(  uint8_t priority, uint8_t cmd,  uint8_t dst, wirebus_packet *p)
+uint8_t wirebusSendMessage(  wirebus_device* device, uint8_t priority, uint8_t cmd,  uint8_t dst, wirebus_packet *p)
 {
 	uint8_t *ptr = buff;
 	total_bytes = (( cmd >> 4 ) & 0x03);
@@ -70,7 +68,7 @@ uint8_t wirebusSendMessage(  uint8_t priority, uint8_t cmd,  uint8_t dst, wirebu
 	uint8_t *data_ptr = p->p.data;
 
 	*ptr++ = ( priority << 6 ) | cmd;
-	*ptr++ = device_addr;
+	*ptr++ = device->addr;
 	*ptr++ = dst;
 	
 	if(total_bytes == 3)
@@ -109,61 +107,69 @@ uint8_t check_buffer(uint8_t crc,  wirebus_packet *p)
 	return 0;
 }
 
-uint8_t wirebusProcess(wirebus_packet *p)
+
+void handle_receive(wirebus_device *device, wirebus_packet *p)
 {
-	uint8_t local_flags = flags_byte;
-	uint8_t *ptr = buff + pos;
 
-	if(local_flags & FLAG_BREAK )
+        uint8_t pos = device->bytes_cnt-1;
+	uint8_t b   = device->data_byte;
+	device->data_byte = 0;	
+
+        switch(pos)
+        {
+                case 0:
+                        total_bytes =  ( ( b >> 4 ) & 0x3 ) + 3;
+                        break;
+                case 2:
+                       if(b!=0xFF && b!=device->addr ) //If not our address stop receiving 
+                       flags_byte |= (0x30);
+		       break;
+		case 3:
+                     if(total_bytes > 5) total_bytes += b; //Size of packet data 
+                      break;
+        }
+
+	if( device->bytes_cnt < total_bytes )
 	{
-		//Process break state
-		pos = total_bytes = 0;	
+		check_buffer(b,p);		
+		return;
 	}
-	else if( local_flags & FLAG_SEND )
-	{
-		if( sendByte(*ptr) == ERROR_OK )
+
+	buff[pos] = b;
+}
+
+
+void handle_send(wirebus_device *device, wirebus_packet *p)
+{
+	if(device->bytes_cnt < total_bytes)
+		device->data_byte = buff[device->bytes_cnt];
+}
+
+
+uint8_t wirebusProcess(wirebus_device *device, wirebus_packet *p)
+{
+
+	 uint8_t res = processDataTransfer(device);
+	 if( res == ERROR_OK)
+	 {
+		uint8_t state = device->state;	
+		switch(state)
 		{
-			if( pos < total_bytes )
-				sendByte(*ptr+1);
-		}
-	}
-	else if( local_flags & FLAG_RECV )
-	{		
-		uint8_t b;
-		if(readByte(&b) == ERROR_OK)
-		{	
-			//TODO: This pice of code takes 130 bytes. Too big to be good	
-			
-			switch(pos)
-			{
-				case 0:
-				 	total_bytes =  ( ( b >> 4 ) & 0x3 ) + 3;	
-					break;
-                        	case 2:
-                                	if(b!=0xFF && b!=device_addr ) //If not our address stop receiving 
-                                        		flags_byte |= (FLAG_BREAK);
-					break;
-				case 3:
-                                	if(total_bytes > 5) total_bytes += b; //Size of packet data 
-                                		break;
-			}
-			//68 bytes till this line 	
-			if( pos == total_bytes )
-			{
-				check_buffer(b,p);
-				return p->p.cmd;
-			}
-
-			//Next line 34 bytes
-			*ptr = b; pos++;
-			//END OF TODO
-		}
-		
-	}
+			case WIREBUS_STATE_SEND:
+				handle_send(device,p);
+				break;
+			case WIREBUS_STATE_RECV:
+				handle_receive(device,p);
+                        	break;
+                        //case WIREBUS_STATE_BREAK:
+                        //	break;
+		}	
+	 }
 
 #ifdef USE_SOFTWARE_TIMER
 	wirebus_timer_handler();
-#endif
-	return WIREBUS_CMD_NONE;	
+#endif	
+
+	return p->p.cmd;
 }
 
