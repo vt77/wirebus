@@ -18,7 +18,8 @@ limitations under the License.
 #define __WIREBUS_DEF_H
 
 #include <stdint.h>
-
+#include <platform.h>
+#include <transport.h>
 
 #define		WIREBUS_PRIORITY_ALERT		0b11
 #define		WIREBUS_PRIORITY_COMMAND	0b10
@@ -109,25 +110,22 @@ typedef union{
 #define		EXTRACT_COMMAND(a)   ( a & 0x3F)
 
 
-enum  wirebusErrorCode {
-        ERROR_OK                                =   0,
-        ERROR_TRANSMIT_ABORT                    =   1,
-	ERROR_BUSY				=   2
-};
-
 #define         ASSERT(a)  if(a != ERROR_OK) goto error
 
+/*
 typedef struct sWirebusDevice
 {
         uint8_t         addr;
         uint8_t   	state;
 	uint8_t		bytes_cnt;
+	uint8_t  	data_byte;
+	uint8_t  	bits_to_process;
 }wirebus_device;
-
+*/
 
 void    wirebusInit(wirebus_device *dev);
-uint8_t wirebusSendPacket( wirebus_packet *p );
-uint8_t wirebusSendMessage( uint8_t priority, uint8_t cmd , uint8_t dst, wirebus_packet *p );
-uint8_t wirebusProcess(wirebus_packet *p);
+uint8_t wirebusSendPacket( wirebus_device *dev, wirebus_packet *p );
+uint8_t wirebusSendMessage( wirebus_device *dev, uint8_t priority, uint8_t cmd , uint8_t dst, wirebus_packet *p );
+uint8_t wirebusProcess(wirebus_device *dev, wirebus_packet *p);
 
 #endif
