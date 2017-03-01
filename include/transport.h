@@ -36,8 +36,8 @@ enum wirebusDeviceStates{
 };
 
 enum pinState{
-        PIN_STATE_SPACE                         =       0,
-        PIN_STATE_MARK                          =       1
+        PIN_STATE_MARK                          =       0,
+        PIN_STATE_SPACE                         =       1
 };
 
 typedef struct sWirebusDevice
