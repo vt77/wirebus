@@ -1,0 +1,14 @@
+{
+  "name": "WireBus",
+  "keywords": "iot, communication, serial, wire",
+  "description": "WireBus (Easy IoT framework)",
+  "include": "WireBus",
+  "repository":
+  {
+    "type": "git",
+    "url": "https://github.com/vt77.com/wirebus/arduino"
+  },
+  "frameworks": "arduino",
+  "platforms": "atmelavr"
+}
+
