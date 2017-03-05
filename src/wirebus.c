@@ -18,7 +18,9 @@ limitations under the License.
 #include <platform.h>
 #include <transport.h>
 
-extern uint8_t flags_byte;
+
+uint8_t flags_byte;
+
 static uint8_t buff[WIREBUS_MAX_DATA+5];
 
 static uint8_t pos=0;
@@ -62,7 +64,7 @@ void INLINE wirebusInit(wirebus_device * dev)
 uint8_t wirebusSendMessage(  wirebus_device* device, uint8_t priority, uint8_t cmd,  uint8_t dst, wirebus_packet *p)
 {
 	uint8_t *ptr = buff;
-	total_bytes = (( cmd >> 4 ) & 0x03);
+	total_bytes = (( cmd >> 4 ) & 0x03)+3;
 
 	uint8_t data_size = p->p.size;
 	uint8_t *data_ptr = p->p.data;
@@ -82,6 +84,8 @@ uint8_t wirebusSendMessage(  wirebus_device* device, uint8_t priority, uint8_t c
 
 
 	*ptr++ = calc_crc(buff,total_bytes);
+
+	DBG("Buffer created %d bytes",total_bytes);
 	
 	return sendStart();
 }
@@ -122,7 +126,7 @@ void handle_receive(wirebus_device *device, wirebus_packet *p)
                         break;
                 case 2:
                        if(b!=0xFF && b!=device->addr ) //If not our address stop receiving 
-                       flags_byte |= (0x30);
+                       //flags_byte |= (0x30);
 		       break;
 		case 3:
                      if(total_bytes > 5) total_bytes += b; //Size of packet data 
@@ -141,8 +145,15 @@ void handle_receive(wirebus_device *device, wirebus_packet *p)
 
 void handle_send(wirebus_device *device, wirebus_packet *p)
 {
+	DBG("Handle send");
+
 	if(device->bytes_cnt < total_bytes)
+	{
+		DBG("Sending byte %d : 0x%X", device->bytes_cnt, buff[device->bytes_cnt] );
 		device->data_byte = buff[device->bytes_cnt];
+		device->bits_to_process = 8;
+		device->bytes_cnt++;
+	}
 }
 
 

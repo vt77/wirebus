@@ -47,6 +47,11 @@
 #include "mcu/stm8.h"
 #endif
 
+#ifdef __MCU_mock__
+#include "mcu/mock.h"
+#endif
+
+
 #ifndef WIREBUS_MCU
 #error "Unknown microcontroller. Please define microcontroleer by __MCU_XXXX"
 #endif

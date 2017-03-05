@@ -20,13 +20,13 @@ Disclaimer:
 #include "platform.h"
 #include "transport.h"
 
-volatile uint8_t flags_byte;
+uint8_t flags_byte;
  
 
 #define         FLAG_IDLE       0x00
 #define         FLAG_BIT        0x01
 #define         FLAG_ONE        0x02
-#define         FLAG_RESET      0x04
+#define         FLAG_RESET      0x05
 
 #define         FLAG_SEND       0x10
 #define         FLAG_RECV       0x20
@@ -75,37 +75,47 @@ uint8_t processDataTransfer(wirebus_device *device)
 	//Process take place on line release only
 	if( CHECK_FLAG( FLAG_COMPLETE ) == 0 )
                                 return ERROR_BUSY;
+
+	DBG("\n==================Process next bit============\n");
 	
 	//Clear all dynamic flags
 	CLEAR_FLAG(FLAG_COMPLETE|FLAG_ONE|FLAG_BIT|FLAG_SKIP);
 	
 	//Process flags
-	if(CHECK_FLAG( FLAG_RESET ))
+	if(CHECK_FLAG( FLAG_RESET ) == FLAG_RESET)
 	{
-
 		//After reset
 		device->bytes_cnt = 0;
-		device->bits_to_process = 8;
 		CLEAR_FLAG(FLAG_RESET);
-
-	}else{ 
-	
-	  uint8_t bitmask = (1<<device->bits_to_process);
-	
-	  if( device->data_byte & bitmask ) //This will no effect when receiving
-			SET_FLAG(FLAG_ONE);
-	  
-	  if(CHECK_FLAG( FLAG_ONE ))	//This line will no effect when sending
-			device->data_byte |= bitmask;
+		flags_byte = local_flags;
+		DBG("Handle RESET");
+		DBG("\n==================End of bit processing============\n");
+		return ERROR_OK;
 	}
+
+
+
+	uint8_t bitmask = (1<<device->bits_to_process);
+	
+	DBG("\n==================Start Process Bit============\n");
+        DBG("Bit: %d\t",device->bits_to_process);
+        DBG("Byte: 0x%X BIT: 0x%x\t\n----------------------------------------\n",device->data_byte,bitmask);
+
+	if( device->data_byte & bitmask ) //This will no effect when receiving
+				SET_FLAG(FLAG_ONE);
+	  
+	if(CHECK_FLAG( FLAG_ONE ))	//This line will no effect when sending
+				device->data_byte |= bitmask;
 
 	flags_byte = local_flags;
 	
 	if( device->bits_to_process-- != 0)
                         	return ERROR_BUSY;
 
-	device->bits_to_process = 8; 
-	device->bytes_cnt++;
+	//device->bits_to_process = 8; 
+	//device->bytes_cnt++;
+
+	DBG("\n==================End of bit processing============\n");
 
 	return ERROR_OK;
 }
@@ -193,7 +203,7 @@ ISR( TIMER_VECTOR )
         }
 
 	if( ( CHECK_FLAG(FLAG_SEND|FLAG_BIT|FLAG_ONE|FLAG_SKIP) == (FLAG_SEND|FLAG_BIT|FLAG_ONE) ) || /* Release line when FLAG_ON set on DATA tick and not SKIP present */
-		 CHECK_FLAG(FLAG_RESET) /* Always release line on reset */)
+		( CHECK_FLAG(FLAG_RESET) == FLAG_RESET ) /* Always release line on reset */)
 	{
 			SET_SPACE(); 
                         //Wait pin change
