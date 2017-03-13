@@ -63,6 +63,7 @@ limitations under the License.
 #define		WIREBUS_DATA_DEVICEINFO			WIREBUS_DATA_BASE + 1		//Two byte device info UUID_MAJOR and UUID_MINOIR
 #define         WIREBUS_DATA_SET                        WIREBUS_DATA_BASE + 2                   //Set Data. Device specific. 
 
+
 #define 	WIREBUS_ADDRESS_BROADCAST	0xFF
 
 
@@ -95,8 +96,14 @@ typedef struct{
         uint8_t         dst;
         uint8_t         size;
         uint8_t         data[WIREBUS_MAX_DATA];
-        uint8_t         crc;
 }wirebus_packet;
+
+#define         WIREBUS_DATA_SIZE_OFFSET        0x03    //size field offset   
+#define         WIREBUS_DST_ADDR_OFFSET         0x02    //dst field offset
+#define         WIREBUS_CMD_OFFSET		0x00	//cmd field offset
+#define         WIREBUS_MIN_HEADER_SIZE         0x04 	//cmd+src+dst+crc
+
+
 
 #define		EXTRACT_PRIORITY(a)	( a >> 6 )
 #define		EXTRACT_COMMAND(a)   ( a & 0x3F)
@@ -111,6 +118,7 @@ extern "C"{
 void    wirebusInit(uint8_t pin);
 uint8_t wirebusSendMessage(uint8_t priority, uint8_t cmd , uint8_t dst, wirebus_packet *p );
 uint8_t wirebusProcess(wirebus_packet *p);
+void    wirebusSetLocalAddr(uint8_t);
 };
 
 #endif
