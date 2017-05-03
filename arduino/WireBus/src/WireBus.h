@@ -114,11 +114,16 @@ typedef struct{
 
 #define         ASSERT(a)  if(a != ERROR_OK) goto error
 
-extern "C"{
 void    wirebusInit(uint8_t pin);
 uint8_t wirebusSendMessage(uint8_t priority, uint8_t cmd , uint8_t dst, wirebus_packet *p );
 uint8_t wirebusProcess(wirebus_packet *p);
 void    wirebusSetLocalAddr(uint8_t);
-};
+
+
+
+#define COMMANDSMAP_START(a)  transferState *t = &a    
+#define WIREBUSCOMMAND(a,b) if(wirebus_flags == a) res = b(t)
+#define COMMANDSMAP_END
+
 
 #endif

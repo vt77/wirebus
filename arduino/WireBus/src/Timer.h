@@ -10,8 +10,12 @@
 void inline initWirebusTimer()
 {
 
-    TCCR1A = (1<<WGM01);    				// CTC counting mode
-    TCCR1B = (0 << CS00)|(0 << CS01)|(1 << CS02);     	// set prescaler of 256
+
+    //OCR0A = WIREBUS_BIT_DELAY;TCCR0A =(1<<WGM01);TCCR0B = PRESCALER; TIMSK0 |= (1<<OCIE0A);
+   
+
+    TCCR1A = 0;    				// CTC counting mode
+    TCCR1B = (1<<WGM12)|(1<<CS12);     		// set prescaler of 256 + CTC
     TCNT1 = 0;              				// clear the timer count
     OCR1A = WIREBUS_BIT_DELAY;
 
@@ -34,7 +38,7 @@ void inline initWirebusTimer()
 
 void inline wirebusResetTimer(uint8_t delay)
 {
-	TCNT0=WIREBUS_BIT_DELAY-delay;
+	TCNT1=WIREBUS_BIT_DELAY-delay;
 #if defined(__AVR_ATmega8__)|| defined(__AVR_ATmega128__)
 	TIFR |= _BV(OCF1A);      // clear any pending interrupts;
 #else
