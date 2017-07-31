@@ -20,7 +20,7 @@ description: > # this means to ignore newlines until "baseurl:"
   for IoT and Smart Homes supports multiply platforms  AVR,PIC,STM 
   and small MCUs like Attiny, PIC12, STM8. Easy to start and robust for small and big projects 
 baseurl: "" # the subpath of your site, e.g. /blog
-url: "" # the base hostname & protocol for your site, e.g. http://example.com
+url: "http://wirebus.co" # the base hostname & protocol for your site, e.g. http://example.com
 twitter_username: wirebus
 github_username:  vt77/wirebus
 
