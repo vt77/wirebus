@@ -4,6 +4,8 @@ title:  "Thermostat for pic12f683"
 date:   2017-01-31 12:36:05 +0200
 category: Devices
 featured: yes
+preview: Nevertheless device called "thermostat" it can regulate any analog demension like soil humidity, light intensivity and others. Device can operate in two modes
+
 tags: [Devices]
 ---
 

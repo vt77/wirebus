@@ -1,8 +1,8 @@
 <header class="site-header" role="banner">
 
-  <div class="wrapper">
+  <div class="header">
 
-    <a class="site-title" href="{{ "/" | relative_url}}">{{ site.title | escape }}</a>
+    <a class="site-title" href="{{ "/" | relative_url}}"><img src="/assets/logo.png" /></a>
 
     <nav class="site-nav">
       <span class="menu-icon">
@@ -14,14 +14,36 @@
       </span>
 
       <div class="trigger">
-        {% for page in site.pages %}
-          {% if page.title and page.menu == 'main' %}
-          <a class="page-link" href="{{ page.url | relative_url }}">{{ page.title | escape }}</a>
-          {% endif %}
-        {% endfor %}
+	<a class="page-link" href="{{ "/blog/" | relative_url }}">Blog</a>
+	<a class="page-link" href="{{ "/resellers/" | relative_url }}">Where to buy</a>
       </div>
     </nav>
 
   </div>
 
 </header>
+
+<section class="banner">
+<div class="banner-grid-fixed">
+<div class="bannertext"><h2>Make your life better</h2>Simple and robust opensource IoT framework for smart home automation</div>
+<div class="blogitems">
+<h3>Featured Blog Topics</h3>
+
+  <ul class="post-list">
+    {% for post in site.posts %}
+        {% if post.featured  %}
+      <li>
+        <h3>
+          <a class="post-link" href="{{ post.url | relative_url }}">{{ post.title | escape }}</a>
+        </h3>
+        <p>{{ post.preview }}</p> <span class="post-meta">{{ post.date | date: "%b %-d, %Y" }}</span>
+      </li>
+      {% endif %}
+    {% endfor %}
+  </ul>
+
+
+</div>
+</div>
+</section>
+
