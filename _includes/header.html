@@ -1,8 +1,27 @@
 <header class="site-header" role="banner">
-
   <div class="header">
 
-    <a class="site-title" href="{{ "/" | relative_url}}"><img src="/assets/logo.png" /></a>
+    <a class="site-title" href="{{ "/" | relative_url}}">
+    <div class="logo">
+    <svg viewBox="0 0 100 90" width="90px" height="70px" class="logoimg">
+<pattern id="diagonalHatch" patternUnits="userSpaceOnUse" width="4" height="4" fill="#f6f6f6">
+ <rect width='4' height='4' fill='#f6f6f6'/>
+ <path d="M-1,1 l2,-2 M0,4 l4,-4 M3,5 l2,-2" style="stroke:#c0c0c0; stroke-width:0.5;"/>
+</pattern>
+<path d="M6 16 L25 16 L25 37 Z" fill="#c0c0c0"/>
+<path d="M26 16 L26 45 L40 30 Z" fill="#e0e0e0"/>
+<path d="M27 45 L61 8 L61 78 Z" fill="url(#diagonalHatch)" />
+<path d="M62 8 L92 8 L62 38 Z" fill="#e0e0e0"/>
+<path d="M82 19 L92 19 L62 50 L62 39 Z" fill="#c0c0c0"/>
+<path d="M62 51 L62 78 L75 65 Z" fill="#e0e0e0"/>
+<path d="M62 79 L75 92 L75 66 Z" fill="#c0c0c0"/> 
+   </svg>
+   <div class="logotxt">
+   <h1>Wirebus</h1>
+   <h2>Smart Home Automation</h2>
+   </div> 
+  </div>
+    </a>
 
     <nav class="site-nav">
       <span class="menu-icon">
@@ -14,6 +33,7 @@
       </span>
 
       <div class="trigger">
+        <a class="page-link" href="{{ "/" | relative_url }}">Home</a>
 	<a class="page-link" href="{{ "/blog/" | relative_url }}">Blog</a>
 	<a class="page-link" href="{{ "/resellers/" | relative_url }}">Where to buy</a>
       </div>
@@ -22,28 +42,6 @@
   </div>
 
 </header>
-
-<section class="banner">
-<div class="banner-grid-fixed">
-<div class="bannertext"><h2>Make your life better</h2>Simple and robust opensource IoT framework for smart home automation</div>
-<div class="blogitems">
-<h3>Featured Blog Topics</h3>
-
-  <ul class="post-list">
-    {% for post in site.posts %}
-        {% if post.featured  %}
-      <li>
-        <h3>
-          <a class="post-link" href="{{ post.url | relative_url }}">{{ post.title | escape }}</a>
-        </h3>
-        <p>{{ post.preview }}</p> <span class="post-meta">{{ post.date | date: "%b %-d, %Y" }}</span>
-      </li>
-      {% endif %}
-    {% endfor %}
-  </ul>
-
-
-</div>
-</div>
-</section>
-
+{% if page.layout == 'home' %}
+{% include banner.html %}
+{% endif %}

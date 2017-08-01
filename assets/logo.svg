@@ -1,0 +1,13 @@
+<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg">
+<pattern id="diagonalHatch" patternUnits="userSpaceOnUse" width="4" height="4" fill="#f6f6f6">
+ <rect width='4' height='4' fill='#f6f6f6'/>
+ <path d="M-1,1 l2,-2 M0,4 l4,-4 M3,5 l2,-2" style="stroke:#c0c0c0; stroke-width:0.5;"/>
+</pattern>
+<path d="M6 16 L25 16 L25 37 Z" fill="#c0c0c0"/>
+<path d="M26 16 L26 45 L40 30 Z" fill="#e0e0e0"/>
+<path d="M27 45 L61 8 L61 78 Z" fill="url(#diagonalHatch)" />
+<path d="M62 8 L92 8 L62 38 Z" fill="#e0e0e0"/>
+<path d="M82 19 L92 19 L62 50 L62 39 Z" fill="#c0c0c0"/>
+<path d="M62 51 L62 78 L75 65 Z" fill="#e0e0e0"/>
+<path d="M62 79 L75 92 L75 66 Z" fill="#c0c0c0"/>
+</svg>

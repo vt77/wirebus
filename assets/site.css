@@ -37,6 +37,40 @@ td{
     border:1px solid #c0c0c0;
 }
 
+.logo{
+   float:left;
+   width: 300px;
+   display: flex;
+}
+
+.logo .logoimg, .logo .logotxt
+{
+	flex-direction: column;	
+        line-height: 34px;
+}
+
+.logo h1 .logo h2{
+    position:relative;
+    display: inline;
+}
+
+
+.logo h1{
+  color:white;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.32);
+  font-size: 38px;
+  margin:0px;
+}
+
+
+.logo h2{
+    font-size: 14px;
+    margin: 0px;
+    font-weight: bold;
+    color: #999; 
+}
+
+
 .site-header{
     position: fixed;
     background-color: white;
@@ -93,4 +127,20 @@ td{
     font-size: 22px;
     font-weight: 700;	
 }
+
+@media screen and (max-width: 600px){
+.githubribon{
+   display:none;
+}
+}
+
+@media screen and (min-width: 600px){
+.site-nav{
+   padding: 0px 20px;
+   margin-right: 120px;
+}
+
+
+}
+
 
