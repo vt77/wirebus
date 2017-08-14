@@ -129,9 +129,16 @@ td{
 }
 
 @media screen and (max-width: 600px){
-.githubribon{
-   display:none;
+.hideonmobile{
+   display:none !important;
 }
+
+.site-nav .trigger {
+    clear: both;
+    display: none;
+}
+
+
 }
 
 @media screen and (min-width: 600px){
@@ -140,7 +147,8 @@ td{
    margin-right: 120px;
 }
 
-
+.infobox{
+	display: flex;
 }
 
-
+}

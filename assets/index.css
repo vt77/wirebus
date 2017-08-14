@@ -4,3 +4,25 @@
  }
 }
 
+.bigicon
+{
+    font-size: 134px;
+    color: #70A5EA;
+}
+
+.boxrow
+{
+    width:25%;
+    padding:10px;
+}
+
+.grayblock
+{
+    background-color: #F8F9F9;
+    width: 100%;
+    height: 403px;
+}
+
+.home h1{
+	color: #868382;
+}
