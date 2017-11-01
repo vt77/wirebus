@@ -36,6 +36,8 @@ Sorry, this part under construction yet. Here we want to post BOM, links to orde
 
 For now you can see latest updates on  [Wirebus github repository](https://github.com/vt77/wirebus)
 
+=== PCB : https://www.firstPCB.com/mi_odrNrP
+
 
 [MPX5100][http://www.nxp.com/assets/documents/data/en/data-sheets/MPX5100.pdf]
 
